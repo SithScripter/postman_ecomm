@@ -18,7 +18,6 @@ pipeline {
                     ]) {
                         bat 'if not exist "%WORKSPACE%\\newman-reports" mkdir "%WORKSPACE%\\newman-reports"'
 
-                        // Run synchronously so Jenkins waits until it finishes
                         bat '''
 docker run --rm ^
     -v "%WORKSPACE%\\newman-reports:/etc/newman/newman" ^
