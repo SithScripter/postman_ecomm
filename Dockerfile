@@ -11,5 +11,5 @@ RUN npm install -g newman newman-reporter-htmlextra
 COPY E2E_Ecommerce.postman_collection.json .
 COPY headerimage@2x.jpg .
 
-# Default command
-ENTRYPOINT ["newman", "run"]
+# Default command (can be overridden by docker run)
+CMD ["newman", "run", "E2E_Ecommerce.postman_collection.json"]
