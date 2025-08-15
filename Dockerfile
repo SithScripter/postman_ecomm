@@ -4,10 +4,13 @@ FROM node:18-alpine
 # Set work directory
 WORKDIR /etc/newman
 
+# *** NEW STEP: Create reports directory and set permissions for the node user ***
+RUN mkdir -p /etc/newman/reports && chown -R node:node /etc/newman
+
 # Install Newman & HTML Extra reporter
 RUN npm install -g newman newman-reporter-htmlextra
 
-# Copy collection and any assets (permissions safe for mounted volumes)
+# Copy collection and any assets
 COPY --chown=node:node E2E_Ecommerce.postman_collection.json .
 COPY --chown=node:node headerimage@2x.jpg .
 
