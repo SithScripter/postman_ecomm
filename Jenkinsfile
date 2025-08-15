@@ -14,19 +14,18 @@ steps {
     }
 }
         }
-        stage('Publish HTML Report') {
-            steps {
-                echo 'Publishing the HTML report...'
-                // This looks for the 'newman' folder created by your batch script
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'newman', 
-                    reportFiles: 'E2E_Ecommerce.html', 
-                    reportName: 'Newman Test Report'
-                ])
-            }
-        }
+stage('Publish HTML Report') {
+    steps {
+        echo 'Publishing the HTML report...'
+        publishHTML(target: [
+            allowMissing: false,
+            alwaysLinkToLastBuild: true,
+            keepAll: true,
+            reportDir: 'newman', // <-- Corrected folder name
+            reportFiles: 'E2E_Ecommerce.html', 
+            reportName: 'Newman Test Report'
+        ])
+    }
+}
     }
 }
