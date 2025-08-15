@@ -137,9 +137,8 @@
 								{
 									"key": "productImage",
 									"type": "file",
-									"src": "headerimage@2x.jpg"
+									"src": "postman-cloud:///1efff3ea-1b1b-4d10-89ec-70953511efe9"
 								}
-								
 							]
 						},
 						"url": {
