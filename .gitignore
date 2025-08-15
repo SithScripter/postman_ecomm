@@ -9,4 +9,4 @@ newman/
 .env
 
 #ignore windwos batch files
-#*.bat
+*.bat
