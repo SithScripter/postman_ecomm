@@ -1,0 +1,12 @@
+# Ignore Node.js dependency folder
+node_modules/
+
+# Ignore Newman report output folder
+newman/
+
+# Ignore local environment files that might contain secrets
+*.postman_environment.json
+.env
+
+#ignore windwos batch files
+*.bat

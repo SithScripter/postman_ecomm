@@ -1,0 +1,373 @@
+{
+	"info": {
+		"_postman_id": "702b5146-de98-4713-83ce-0fa6eb20edc0",
+		"name": "E2E_Ecommerce",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "43005976",
+		"_collection_link": "https://www.postman.com/docking-module-geoscientist-61772514/workspace/garry/collection/43005976-702b5146-de98-4713-83ce-0fa6eb20edc0?action=share&source=collection_link&creator=43005976"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "User Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();\r",
+									"const accesToken = jsonData.token;\r",
+									"const userIdIs = jsonData.userId;\r",
+									"pm.collectionVariables.set(\"token\",accesToken);\r",
+									"pm.collectionVariables.set(\"userID\", userIdIs);\r",
+									"pm.test(\"User logged in Successfully\", function () {\r",
+									"    pm.expect(jsonData.message).to.eql(\"Login Successfully\");\r",
+									"});\r",
+									"pm.execution.setNextRequest(\"Create Product\");\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"userEmail\": \"{{USER_EMAIL}}\",\r\n    \"userPassword\": \"{{USER_PASSWORD}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://rahulshettyacademy.com/api/ecom/auth/login",
+							"protocol": "https",
+							"host": [
+								"rahulshettyacademy",
+								"com"
+							],
+							"path": [
+								"api",
+								"ecom",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Create Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();\r",
+									"const productIdIs = jsonData.productId;\r",
+									"pm.collectionVariables.set(\"productID\", productIdIs);\r",
+									"pm.test(\"Product added Successfully\", function () {\r",
+									"    pm.expect(jsonData.message).to.eql(\"Product Added Successfully\");\r",
+									"});\r",
+									"pm.execution.setNextRequest(\"Create Order\");"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "productName",
+									"value": "{{productName}}",
+									"type": "text"
+								},
+								{
+									"key": "productAddedBy",
+									"value": "{{userID}}",
+									"type": "text"
+								},
+								{
+									"key": "productCategory",
+									"value": "fashion",
+									"type": "text"
+								},
+								{
+									"key": "productSubCategory",
+									"value": "shirts",
+									"type": "text"
+								},
+								{
+									"key": "productPrice",
+									"value": "11500",
+									"type": "text"
+								},
+								{
+									"key": "productDescription",
+									"value": "{{productName}}",
+									"type": "text"
+								},
+								{
+									"key": "productFor",
+									"value": "women",
+									"type": "text"
+								},
+								{
+									"key": "productImage",
+									"type": "file",
+									"src": "/D:/Work/Postman collections export/headerimage@2x.jpg"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://rahulshettyacademy.com/api/ecom/product/add-product",
+							"protocol": "https",
+							"host": [
+								"rahulshettyacademy",
+								"com"
+							],
+							"path": [
+								"api",
+								"ecom",
+								"product",
+								"add-product"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();\r",
+									"pm.test(\"Product Deleted Successfully\", function () {\r",
+									"    pm.expect(jsonData.message).to.eql(\"Product Deleted Successfully\");\r",
+									"});\r",
+									"pm.execution.setNextRequest(null);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://rahulshettyacademy.com/api/ecom/product/delete-product/{{productID}}",
+							"protocol": "https",
+							"host": [
+								"rahulshettyacademy",
+								"com"
+							],
+							"path": [
+								"api",
+								"ecom",
+								"product",
+								"delete-product",
+								"{{productID}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Order Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();\r",
+									"const actualProdName = jsonData.data.productName;\r",
+									"const expectedProdName = pm.collectionVariables.get(\"productName\");\r",
+									"\r",
+									"pm.test(\"Order details retrieved Successfully\", function () {\r",
+									"    pm.expect(actualProdName).to.eql(expectedProdName);\r",
+									"});\r",
+									"pm.execution.setNextRequest(\"Delete Product\");\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://rahulshettyacademy.com/api/ecom/order/get-orders-details?id={{orderID}}",
+							"protocol": "https",
+							"host": [
+								"rahulshettyacademy",
+								"com"
+							],
+							"path": [
+								"api",
+								"ecom",
+								"order",
+								"get-orders-details"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "{{orderID}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();\r",
+									"const orderIdIs = jsonData.orders[0];\r",
+									"pm.collectionVariables.set(\"orderID\", orderIdIs);\r",
+									"pm.expect(jsonData.message).to.eql(\"Order Placed Successfully\");\r",
+									"pm.test(\"Order placed Successfully\", function () {\r",
+									"    pm.expect(jsonData.message).to.eql(\"Order Placed Successfully\");\r",
+									"});\r",
+									"pm.execution.setNextRequest(\"Order Details\");"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"orders\": [\r\n        {\r\n            \"country\": \"India\",\r\n            \"productOrderedId\": \"{{productID}}\"\r\n        }\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://rahulshettyacademy.com/api/ecom/order/create-order",
+							"protocol": "https",
+							"host": [
+								"rahulshettyacademy",
+								"com"
+							],
+							"path": [
+								"api",
+								"ecom",
+								"order",
+								"create-order"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "productID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "orderID",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "productName",
+			"value": "Zara Shirt",
+			"type": "string"
+		}
+	]
+}
