@@ -11,17 +11,17 @@ pipeline {
 
         stage('Run Newman Tests') {
             environment {
-                USER_EMAIL    = credentials('POSTMAN_ECOM_EMAIL')
+                USER_EMAIL = credentials('POSTMAN_ECOM_EMAIL')
                 USER_PASSWORD = credentials('POSTMAN_ECOM_PASSWORD')
             }
             steps {
                 echo 'Running API tests inside the container...'
 
-                // Ensure report directory exists on host before mount
+                // Ensure report directory exists on host for Docker volume mount
                 bat 'if not exist "%WORKSPACE%\\newman-reports" mkdir "%WORKSPACE%\\newman-reports"'
 
-                // Run Newman in Docker (single-line, Windows-safe)
-                bat 'docker run --rm -t -v "%WORKSPACE%\\newman-reports:/etc/newman/newman" --env USER_EMAIL=%USER_EMAIL% --env USER_PASSWORD=%USER_PASSWORD% postman-ecomm-tests "E2E_Ecommerce.postman_collection.json" --env-var "USER_EMAIL=%USER_EMAIL%" --env-var "USER_PASSWORD=%USER_PASSWORD%" --timeout-request 10000 -r cli,htmlextra --reporter-htmlextra-export "/etc/newman/newman/E2E_Ecommerce.html"'
+                // Updated single-line docker command with the -t flag to fix hanging issue
+                bat 'docker run --rm -t -v "%WORKSPACE%\\newman-reports:/etc/newman/newman" --env USER_EMAIL=%USER_EMAIL% --env USER_PASSWORD=%USER_PASSWORD% postman-ecomm-tests "E2E_Ecommerce.postman_collection.json" --env-var "USER_EMAIL=%USER_EMAIL%" --env-var "USER_PASSWORD=%USER_PASSWORD%" -r cli,htmlextra --reporter-htmlextra-export "/etc/newman/newman/E2E_Ecommerce.html"'
             }
         }
 
