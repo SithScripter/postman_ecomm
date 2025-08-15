@@ -1,5 +1,6 @@
 pipeline {
     agent any
+
     stages {
         stage('Build Docker Image') {
             steps {
@@ -7,21 +8,29 @@ pipeline {
                 bat 'docker build -t postman-ecomm-tests .'
             }
         }
+
         stage('Run Newman Tests') {
-            // This new block will securely load our credentials
             environment {
-                USER_EMAIL = credentials('POSTMAN_EMAIL')
-                USER_PASSWORD = credentials('POSTMAN_PASSWORD')
+                USER_EMAIL = credentials('POSTMAN_ECOM_PASSWORD')
+                USER_PASSWORD = credentials('POSTMAN_ECOM_EMAIL')
             }
             steps {
                 echo 'Running API tests inside the container...'
-                // This new docker command injects the secrets as environment variables
-                bat 'docker run --rm -v "%WORKSPACE%/newman-reports:/etc/newman/newman" --env USER_EMAIL --env USER_PASSWORD postman-ecomm-tests "E2E_Ecommerce.postman_collection.json" -r cli,htmlextra'
+                bat '''
+                docker run --rm ^
+                  -v "%WORKSPACE%/newman-reports:/etc/newman/newman" ^
+                  --env USER_EMAIL=%USER_EMAIL% ^
+                  --env USER_PASSWORD=%USER_PASSWORD% ^
+                  postman-ecomm-tests "E2E_Ecommerce.postman_collection.json" ^
+                  --env-var "USER_EMAIL=%USER_EMAIL%" ^
+                  --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
+                  -r cli,htmlextra --reporter-htmlextra-export "/etc/newman/newman/E2E_Ecommerce.html"
+                '''
             }
         }
+
         stage('Publish HTML Report') {
             steps {
-                // This stage remains the same
                 echo 'Publishing the HTML report...'
                 publishHTML(target: [
                     allowMissing: false,
