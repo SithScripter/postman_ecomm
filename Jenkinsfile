@@ -1,52 +1,60 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = 'postman-ecomm-tests'
+    }
+
     stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 echo 'Building the Docker test image...'
-                bat 'docker build -t postman-ecomm-tests .'
+                bat "docker build -t %DOCKER_IMAGE% ."
             }
         }
 
         stage('Run Newman Tests') {
-            environment {
-                USER_EMAIL    = credentials('POSTMAN_ECOM_EMAIL')
-                USER_PASSWORD = credentials('POSTMAN_ECOM_PASSWORD')
-            }
             steps {
-                echo 'Running API tests inside the container...'
+                withCredentials([
+                    string(credentialsId: 'POSTMAN_ECOM_EMAIL', variable: 'USER_EMAIL'),
+                    string(credentialsId: 'POSTMAN_ECOM_PASSWORD', variable: 'USER_PASSWORD')
+                ]) {
+                    echo 'Running API tests inside the container...'
 
-                // Ensure report folder exists
-                bat 'if not exist "%WORKSPACE%\\newman-reports" mkdir "%WORKSPACE%\\newman-reports"'
+                    // Ensure reports directory exists
+                    bat 'if not exist "%WORKSPACE%\\newman-reports" mkdir "%WORKSPACE%\\newman-reports"'
 
-                // Run Newman inside Docker, non-interactive, Windows-safe
-                bat '''
-                docker run --rm --tty=false ^
-                    -v "%WORKSPACE%\\newman-reports:/etc/newman/newman" ^
-                    --workdir /etc/newman ^
-                    --env USER_EMAIL=%USER_EMAIL% ^
-                    --env USER_PASSWORD=%USER_PASSWORD% ^
-                    postman-ecomm-tests "E2E_Ecommerce.postman_collection.json" ^
-                    --env-var "USER_EMAIL=%USER_EMAIL%" ^
-                    --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
-                    --timeout-request 10000 --bail --verbose ^
-                    -r cli,htmlextra ^
-                    --reporter-htmlextra-export "/etc/newman/newman/E2E_Ecommerce.html"
-                '''
+                    // Run Newman via the ENTRYPOINT
+                    bat '''
+                        docker run --rm ^
+                        -v "%WORKSPACE%\\newman-reports:/etc/newman/newman" ^
+                        %DOCKER_IMAGE% ^
+                        E2E_Ecommerce.postman_collection.json ^
+                        --env-var "USER_EMAIL=%USER_EMAIL%" ^
+                        --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
+                        --timeout-request 10000 --bail --verbose ^
+                        -r cli,htmlextra ^
+                        --reporter-htmlextra-export "/etc/newman/newman/E2E_Ecommerce.html"
+                    '''
+                }
             }
         }
 
         stage('Publish HTML Report') {
             steps {
-                echo 'Publishing the HTML report...'
                 publishHTML(target: [
                     allowMissing: false,
                     alwaysLinkToLastBuild: true,
                     keepAll: true,
                     reportDir: 'newman-reports',
                     reportFiles: 'E2E_Ecommerce.html',
-                    reportName: 'Newman Test Report'
+                    reportName: 'API Test Report'
                 ])
             }
         }
@@ -54,7 +62,7 @@ pipeline {
 
     post {
         always {
-            echo 'Cleaning up Docker resources...'
+            echo 'Cleaning up Docker containers and images...'
             bat 'docker system prune -f'
         }
     }
