@@ -11,17 +11,29 @@ pipeline {
 
         stage('Run Newman Tests') {
             environment {
-                USER_EMAIL = credentials('POSTMAN_ECOM_EMAIL')
+                USER_EMAIL    = credentials('POSTMAN_ECOM_EMAIL')
                 USER_PASSWORD = credentials('POSTMAN_ECOM_PASSWORD')
             }
             steps {
                 echo 'Running API tests inside the container...'
 
-                // Ensure report directory exists on host for Docker volume mount
+                // Ensure report folder exists
                 bat 'if not exist "%WORKSPACE%\\newman-reports" mkdir "%WORKSPACE%\\newman-reports"'
 
-                // Updated docker command: removed "-t" and redundant "--env-var" flags
-                bat 'docker run --rm -v "%WORKSPACE%\\newman-reports:/etc/newman/newman" --env USER_EMAIL=%USER_EMAIL% --env USER_PASSWORD=%USER_PASSWORD% postman-ecomm-tests "E2E_Ecommerce.postman_collection.json" -r cli,htmlextra --reporter-htmlextra-export "/etc/newman/newman/E2E_Ecommerce.html"'
+                // Run Newman inside Docker, non-interactive, Windows-safe
+                bat '''
+                docker run --rm --tty=false ^
+                    -v "%WORKSPACE%\\newman-reports:/etc/newman/newman" ^
+                    --workdir /etc/newman ^
+                    --env USER_EMAIL=%USER_EMAIL% ^
+                    --env USER_PASSWORD=%USER_PASSWORD% ^
+                    postman-ecomm-tests "E2E_Ecommerce.postman_collection.json" ^
+                    --env-var "USER_EMAIL=%USER_EMAIL%" ^
+                    --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
+                    --timeout-request 10000 --bail --verbose ^
+                    -r cli,htmlextra ^
+                    --reporter-htmlextra-export "/etc/newman/newman/E2E_Ecommerce.html"
+                '''
             }
         }
 
@@ -37,6 +49,13 @@ pipeline {
                     reportName: 'Newman Test Report'
                 ])
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up Docker resources...'
+            bat 'docker system prune -f'
         }
     }
 }
