@@ -16,6 +16,11 @@ pipeline {
             }
             steps {
                 echo 'Running API tests inside the container...'
+
+                // Ensure report directory exists on host for Docker volume mount
+                bat 'if not exist "%WORKSPACE%\\newman-reports" mkdir "%WORKSPACE%\\newman-reports"'
+
+                // Run Newman inside Docker container
                 bat '''
                 docker run --rm ^
                   -v "%WORKSPACE%/newman-reports:/etc/newman/newman" ^
@@ -24,7 +29,9 @@ pipeline {
                   postman-ecomm-tests "E2E_Ecommerce.postman_collection.json" ^
                   --env-var "USER_EMAIL=%USER_EMAIL%" ^
                   --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
-                  -r cli,htmlextra --reporter-htmlextra-export "/etc/newman/newman/E2E_Ecommerce.html"
+                  --timeout-request 10000 ^
+                  -r cli,htmlextra ^
+                  --reporter-htmlextra-export "/etc/newman/newman/E2E_Ecommerce.html"
                 '''
             }
         }
