@@ -22,7 +22,7 @@ stage('Publish HTML Report') {
             alwaysLinkToLastBuild: true,
             keepAll: true,
             reportDir: 'newman', // <-- Corrected folder name
-            reportFiles: 'E2E_Ecommerce.html', 
+            reportFiles: '*.html', 
             reportName: 'Newman Test Report'
         ])
     }
