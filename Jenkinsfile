@@ -3,17 +3,16 @@ pipeline {
 
     stages {
         stage('Run API Tests via Batch File') {
-            steps {
-                echo 'Executing the run_tests.bat script...'
-                // This command simply runs the batch file from your repository
-                // It also injects the secrets as environment variables for the script to use
-                withCredentials([
-                    string(credentialsId: 'POSTMAN_ECOM_EMAIL', variable: 'USER_EMAIL'),
-                    string(credentialsId: 'POSTMAN_ECOM_PASSWORD', variable: 'USER_PASSWORD')
-                ]) {
-                    bat 'call run_tests.bat'
-                }
-            }
+steps {
+    echo 'Executing the run_tests.bat script...'
+    withCredentials([
+        string(credentialsId: 'POSTMAN_ECOM_EMAIL', variable: 'USER_EMAIL'),
+        string(credentialsId: 'POSTMAN_ECOM_PASSWORD', variable: 'USER_PASSWORD')
+    ]) {
+        // Pass the credentials to the batch script as arguments
+        bat "call run_tests.bat \"%USER_EMAIL%\" \"%USER_PASSWORD%\""
+    }
+}
         }
         stage('Publish HTML Report') {
             steps {
