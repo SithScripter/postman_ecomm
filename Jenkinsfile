@@ -11,8 +11,8 @@ pipeline {
 
         stage('Run Newman Tests') {
             environment {
-                USER_EMAIL = credentials('POSTMAN_ECOM_PASSWORD')
-                USER_PASSWORD = credentials('POSTMAN_ECOM_EMAIL')
+                USER_EMAIL = credentials('POSTMAN_ECOM_EMAIL')
+                USER_PASSWORD = credentials('POSTMAN_ECOM_PASSWORD')
             }
             steps {
                 echo 'Running API tests inside the container...'
