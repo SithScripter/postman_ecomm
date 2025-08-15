@@ -1,13 +1,18 @@
+# Base image
 FROM node:18-alpine
 
+# Set work directory
 WORKDIR /etc/newman
 
-# Install Newman and HTML Extra Reporter
+# Install Newman & HTML Extra reporter
 RUN npm install -g newman newman-reporter-htmlextra
 
-# Copy collection and any assets into the container
-COPY E2E_Ecommerce.postman_collection.json .
-COPY headerimage@2x.jpg .
+# Copy collection and any assets (permissions safe for mounted volumes)
+COPY --chown=node:node E2E_Ecommerce.postman_collection.json .
+COPY --chown=node:node headerimage@2x.jpg .
 
-# Set entrypoint to run Newman automatically when container starts
-ENTRYPOINT ["newman", "run"]
+# Use a non-root user for better security
+USER node
+
+# Default command for local runs (Jenkins can override in `docker run`)
+CMD ["newman", "run", "E2E_Ecommerce.postman_collection.json", "-r", "cli"]

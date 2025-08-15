@@ -27,20 +27,20 @@ pipeline {
                 ]) {
                     echo 'Running API tests inside the container...'
 
-                    // Ensure reports directory exists
+                    // Create reports directory if not exists
                     bat 'if not exist "%WORKSPACE%\\newman-reports" mkdir "%WORKSPACE%\\newman-reports"'
 
-                    // Run Newman via the ENTRYPOINT
+                    // Run Newman explicitly (no ENTRYPOINT dependency)
                     bat '''
-                        docker run --rm ^
-                        -v "%WORKSPACE%\\newman-reports:/etc/newman/newman" ^
-                        %DOCKER_IMAGE% ^
-                        E2E_Ecommerce.postman_collection.json ^
+                        docker run --rm --tty=false ^
+                        -v "%WORKSPACE%\\newman-reports:/etc/newman/reports" ^
+                        --workdir /etc/newman ^
+                        %DOCKER_IMAGE% newman run E2E_Ecommerce.postman_collection.json ^
                         --env-var "USER_EMAIL=%USER_EMAIL%" ^
                         --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
                         --timeout-request 10000 --bail --verbose ^
                         -r cli,htmlextra ^
-                        --reporter-htmlextra-export "/etc/newman/newman/E2E_Ecommerce.html"
+                        --reporter-htmlextra-export "/etc/newman/reports/E2E_Ecommerce.html"
                     '''
                 }
             }
@@ -54,7 +54,7 @@ pipeline {
                     keepAll: true,
                     reportDir: 'newman-reports',
                     reportFiles: 'E2E_Ecommerce.html',
-                    reportName: 'API Test Report'
+                    reportName: 'Newman HTML Report'
                 ])
             }
         }
@@ -62,8 +62,8 @@ pipeline {
 
     post {
         always {
-            echo 'Cleaning up Docker containers and images...'
-            bat 'docker system prune -f'
+            echo 'Cleaning up...'
+            bat "docker rmi %DOCKER_IMAGE% || exit 0"
         }
     }
 }
