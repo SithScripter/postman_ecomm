@@ -22,13 +22,9 @@ pipeline {
             steps {
                 script {
                     bat 'if not exist newman mkdir newman'
-                    bat """
-                    docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.postman_collection.json ^
-                     --env-var USER_EMAIL=%USER_EMAIL% ^
-                     --env-var USER_PASSWORD=%USER_PASSWORD% ^
-                     --reporters cli,htmlextra ^
-                     --reporter-htmlextra-export newman/report.html
-                    """
+					bat 'docker run --rm postman_ecomm_tests newman -v'
+					bat 'docker run --rm postman_ecomm_tests newman run -h'
+					bat 'docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.postman_collection.json --env-var USER_EMAIL=%USER_EMAIL% --env-var USER_PASSWORD=%USER_PASSWORD% --reporters cli,htmlextra --reporter-htmlextra-export newman/report.html'
                 }
             }
         }
