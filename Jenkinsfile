@@ -59,32 +59,37 @@ docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.post
 }
     }
 
-    post {
-        always {
-            script {
-                // Copy history forward
-                if (fileExists("allure-report/history")) {
-                    bat 'xcopy /E /I /Y allure-report\\history newman\\allure-results\\history'
-                }
-
-                // Archive history for next run
-                zip zipFile: 'allure-history.zip', archive: true, dir: 'newman/allure-results/history'
+post {
+    always {
+        script {
+            // Copy history forward
+            if (fileExists("allure-report/history")) {
+                bat 'xcopy /E /I /Y allure-report\\history newman\\allure-results\\history'
             }
 
-            // Publish Allure Report
-            allure([
-                includeProperties: false,
-                jdk: '',
-                results: [[path: 'newman/allure-results']]
-            ])
+            // Delete old history zip if present
+            if (fileExists("allure-history.zip")) {
+                bat 'del /f /q allure-history.zip'
+            }
 
-            // Publish HTML fallback
-            publishHTML(target: [
-                reportDir: 'newman',
-                reportFiles: 'report.html',
-                reportName: 'Newman HTML Report'
-            ])
-            archiveArtifacts artifacts: 'newman/report.html'
+            // Archive history for next run
+            zip zipFile: 'allure-history.zip', archive: true, dir: 'newman/allure-results/history'
         }
+
+        // Publish Allure Report
+        allure([
+            includeProperties: false,
+            jdk: '',
+            results: [[path: 'newman/allure-results']]
+        ])
+
+        // Publish HTML fallback
+        publishHTML(target: [
+            reportDir: 'newman',
+            reportFiles: 'report.html',
+            reportName: 'Newman HTML Report'
+        ])
+        archiveArtifacts artifacts: 'newman/report.html'
     }
+}
 }
