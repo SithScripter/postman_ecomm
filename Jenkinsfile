@@ -1,40 +1,41 @@
 pipeline {
     agent any
-    environment {
-        USER_EMAIL = credentials('POSTMAN_ECOM_EMAIL')
-        USER_PASSWORD = credentials('POSTMAN_ECOM_PASSWORD')
-    }
-    stages {
-		
-		stage('Docker DNS Test') {
-  steps {
-    bat 'docker run --rm busybox nslookup rahulshettyacademy.com'
-  }
-}
 
-		
+    stages {
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t postman_ecomm_tests .'
+                echo 'Building the Docker test image...'
+                bat 'docker build -t postman-ecomm-tests .'
             }
         }
-        stage('Run Newman API Tests') {
+
+        stage('Run Newman Tests') {
+            environment {
+                // This correctly loads the credentials into the environment
+                USER_EMAIL = credentials('POSTMAN_ECOM_EMAIL')
+                USER_PASSWORD = credentials('POSTMAN_ECOM_PASSWORD')
+            }
             steps {
-                script {
-                    bat 'if not exist newman mkdir newman'
-					bat 'docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.postman_collection.json --env-var USER_EMAIL=%USER_EMAIL% --env-var USER_PASSWORD=%USER_PASSWORD% --reporters cli,htmlextra --reporter-htmlextra-export newman/report.html'
-                }
+                echo 'Running API tests inside the container...'
+                
+                // This is the most robust way to run the container from Jenkins on Windows
+                bat 'docker run --rm -v "%WORKSPACE%/newman:/etc/newman/newman" --env USER_EMAIL=%USER_EMAIL% --env USER_PASSWORD=%USER_PASSWORD% postman-ecomm-tests run E2E_Ecommerce.postman_collection.json --env-var "USER_EMAIL=%USER_EMAIL%" --env-var "USER_PASSWORD=%USER_PASSWORD%" -r cli,htmlextra --reporter-htmlextra-export "newman/report.html"'
             }
         }
-    }
-    post {
-        always {
-            publishHTML(target: [
-                reportDir: 'newman',
-                reportFiles: 'report.html',
-                reportName: 'Newman HTML Report'
-            ])
-            archiveArtifacts artifacts: 'newman/report.html'
+
+        stage('Publish HTML Report') {
+            steps {
+                echo 'Publishing the HTML report...'
+                // This is the standard way to publish the report so it displays correctly
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: 'newman',
+                    reportFiles: 'report.html',
+                    reportName: 'Newman Test Report'
+                ])
+            }
         }
     }
 }
