@@ -7,7 +7,6 @@ pipeline {
     }
 
     stages {
-
         stage('Docker DNS Test') {
             steps {
                 bat 'docker run --rm busybox nslookup rahulshettyacademy.com'
@@ -23,6 +22,7 @@ pipeline {
         stage('Restore Allure History') {
             steps {
                 script {
+                    // ✅ Restore trend history if archive exists
                     if (fileExists("allure-history.zip")) {
                         unzip zipFile: 'allure-history.zip', dir: 'newman/allure-results'
                     }
@@ -30,15 +30,15 @@ pipeline {
             }
         }
 
-stage('Run Newman API Tests') {
-    steps {
-        script {
-            // Clean and prepare newman dir
-            bat 'if exist newman rmdir /s /q newman'
-            bat 'mkdir newman'
+        stage('Run Newman API Tests') {
+            steps {
+                script {
+                    // Clean results
+                    bat 'if exist newman rmdir /s /q newman'
+                    bat 'mkdir newman'
 
-            // Run Newman inside Docker
-            bat '''
+                    // Run Newman with Allure + HTML reporters
+                    bat '''
 docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.postman_collection.json ^
   --env-var USER_EMAIL=%USER_EMAIL% ^
   --env-var USER_PASSWORD=%USER_PASSWORD% ^
@@ -49,47 +49,39 @@ docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.post
   --reporter-allure-export newman/allure-results
 '''
 
-            // 👇 Ensure allure-results directory exists
-            bat 'if not exist newman\\allure-results mkdir newman\\allure-results'
-
-            // Add Jenkins build info
-            bat 'echo Build=%BUILD_NUMBER% > newman\\allure-results\\environment.properties'
+                    // Add Jenkins build info
+                    bat 'echo Build=%BUILD_NUMBER% > newman\\allure-results\\environment.properties'
+                }
+            }
         }
     }
-}
-    }
 
-post {
-    always {
-        script {
-            // Copy history forward
-            if (fileExists("allure-report/history")) {
-                bat 'xcopy /E /I /Y allure-report\\history newman\\allure-results\\history'
+    post {
+        always {
+            script {
+                // ✅ Copy old history forward for trend charts
+                if (fileExists("allure-report/history")) {
+                    bat 'xcopy /E /I /Y allure-report\\history newman\\allure-results\\history'
+                }
+
+                // ✅ Archive updated history for next build
+                zip zipFile: 'allure-history.zip', archive: true, dir: 'newman/allure-results/history'
             }
 
-            // Delete old history zip if present
-            if (fileExists("allure-history.zip")) {
-                bat 'del /f /q allure-history.zip'
-            }
+            // ✅ Publish Allure Report (with trend)
+            allure([
+                includeProperties: false,
+                jdk: '',
+                results: [[path: 'newman/allure-results']]
+            ])
 
-            // Archive history for next run
-            zip zipFile: 'allure-history.zip', archive: true, dir: 'newman/allure-results/history'
+            // ✅ Publish Newman HTML report as fallback
+            publishHTML(target: [
+                reportDir: 'newman',
+                reportFiles: 'report.html',
+                reportName: 'Newman HTML Report'
+            ])
+            archiveArtifacts artifacts: 'newman/report.html'
         }
-
-        // Publish Allure Report
-        allure([
-            includeProperties: false,
-            jdk: '',
-            results: [[path: 'newman/allure-results']]
-        ])
-
-        // Publish HTML fallback
-        publishHTML(target: [
-            reportDir: 'newman',
-            reportFiles: 'report.html',
-            reportName: 'Newman HTML Report'
-        ])
-        archiveArtifacts artifacts: 'newman/report.html'
     }
-}
 }
