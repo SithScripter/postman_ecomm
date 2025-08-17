@@ -22,7 +22,6 @@ pipeline {
         stage('Restore Allure History') {
             steps {
                 script {
-                    // ✅ Restore trend history if archive exists
                     if (fileExists("allure-history.zip")) {
                         unzip zipFile: 'allure-history.zip', dir: 'newman/allure-results'
                     }
@@ -33,11 +32,9 @@ pipeline {
         stage('Run Newman API Tests') {
             steps {
                 script {
-                    // Clean results
                     bat 'if exist newman rmdir /s /q newman'
                     bat 'mkdir newman'
 
-                    // Run Newman with Allure + HTML reporters
                     bat '''
 docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.postman_collection.json ^
   --env-var USER_EMAIL=%USER_EMAIL% ^
@@ -49,7 +46,8 @@ docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.post
   --reporter-allure-export newman/allure-results
 '''
 
-                    // Add Jenkins build info
+                    // Ensure allure-results exists before echo
+                    bat 'if not exist newman\\allure-results mkdir newman\\allure-results'
                     bat 'echo Build=%BUILD_NUMBER% > newman\\allure-results\\environment.properties'
                 }
             }
@@ -59,23 +57,23 @@ docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.post
     post {
         always {
             script {
-                // ✅ Copy old history forward for trend charts
                 if (fileExists("allure-report/history")) {
                     bat 'xcopy /E /I /Y allure-report\\history newman\\allure-results\\history'
                 }
 
-                // ✅ Archive updated history for next build
+                // delete old zip if exists
+                bat 'if exist allure-history.zip del /f /q allure-history.zip'
+
+                // zip up history for next run
                 zip zipFile: 'allure-history.zip', archive: true, dir: 'newman/allure-results/history'
             }
 
-            // ✅ Publish Allure Report (with trend)
             allure([
                 includeProperties: false,
                 jdk: '',
                 results: [[path: 'newman/allure-results']]
             ])
 
-            // ✅ Publish Newman HTML report as fallback
             publishHTML(target: [
                 reportDir: 'newman',
                 reportFiles: 'report.html',
