@@ -284,14 +284,33 @@
 									"//@allure.feature(\"Orders\")\r",
 									"//@allure.story(\"Place order\")\r",
 									"//@allure.severity(\"critical\")\r",
-									"const jsonData = pm.response.json();\r",
-									"const orderIdIs = jsonData.orders[0];\r",
-									"pm.collectionVariables.set(\"orderID\", orderIdIs);\r",
-									"pm.expect(jsonData.message).to.eql(\"Order Placed Successfully\");\r",
-									"pm.test(\"Order placed Successfully\", function () {\r",
-									"    pm.expect(jsonData.message).to.eql(\"Order Placed Successfully\");\r",
+									"\r",
+									"pm.test(\"Status code is 201 Created\", function () {\r",
+									"    pm.response.to.have.status(201);\r",
 									"});\r",
+									"\r",
+									"// Only try to parse the JSON if the status code is correct\r",
+									"if (pm.response.code === 201) {\r",
+									"    const jsonData = pm.response.json();\r",
+									"    const orderIdIs = jsonData.orders[0];\r",
+									"    pm.collectionVariables.set(\"orderID\", orderIdIs);\r",
+									"    \r",
+									"    pm.test(\"Order placed Successfully\", function () {\r",
+									"        pm.expect(jsonData.message).to.eql(\"Order Placed Successfully\");\r",
+									"    });\r",
+									"}\r",
+									"\r",
 									"pm.execution.setNextRequest(\"Order Details\");"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
