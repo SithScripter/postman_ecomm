@@ -30,15 +30,15 @@ pipeline {
             }
         }
 
-        stage('Run Newman API Tests') {
-            steps {
-                script {
-                    // Clean previous results
-                    bat 'if exist newman rmdir /s /q newman'
-                    bat 'mkdir newman'
+stage('Run Newman API Tests') {
+    steps {
+        script {
+            // Clean and prepare newman dir
+            bat 'if exist newman rmdir /s /q newman'
+            bat 'mkdir newman'
 
-                    // Run tests inside Docker
-                    bat '''
+            // Run Newman inside Docker
+            bat '''
 docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.postman_collection.json ^
   --env-var USER_EMAIL=%USER_EMAIL% ^
   --env-var USER_PASSWORD=%USER_PASSWORD% ^
@@ -49,13 +49,14 @@ docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.post
   --reporter-allure-export newman/allure-results
 '''
 
-                    // Add Jenkins metadata to Allure
-                    bat 'echo "Jenkins Build: %BUILD_NUMBER%" > newman\\allure-results\\environment.properties'
-                    bat 'echo "Job Name: %JOB_NAME%" >> newman\\allure-results\\environment.properties'
-                    bat 'echo "Executor: Jenkins on %COMPUTERNAME%" >> newman\\allure-results\\environment.properties'
-                }
-            }
+            // 👇 Ensure allure-results directory exists
+            bat 'if not exist newman\\allure-results mkdir newman\\allure-results'
+
+            // Add Jenkins build info
+            bat 'echo Build=%BUILD_NUMBER% > newman\\allure-results\\environment.properties'
         }
+    }
+}
     }
 
     post {
