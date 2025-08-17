@@ -1,41 +1,66 @@
 pipeline {
     agent any
 
+    environment {
+        USER_EMAIL    = credentials('POSTMAN_ECOM_EMAIL')
+        USER_PASSWORD = credentials('POSTMAN_ECOM_PASSWORD')
+    }
+
     stages {
+
+        stage('Docker DNS Test') {
+            steps {
+                bat 'docker run --rm busybox nslookup rahulshettyacademy.com'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                echo 'Building the Docker test image...'
-                bat 'docker build -t postman-ecomm-tests .'
+                bat 'docker build -t postman_ecomm_tests .'
             }
         }
 
-        stage('Run Newman Tests') {
-            environment {
-                // This correctly loads the credentials into the environment
-                USER_EMAIL = credentials('POSTMAN_ECOM_EMAIL')
-                USER_PASSWORD = credentials('POSTMAN_ECOM_PASSWORD')
-            }
+        stage('Run Newman API Tests') {
             steps {
-                echo 'Running API tests inside the container...'
-                
-                // This is the most robust way to run the container from Jenkins on Windows
-                bat 'docker run --rm -v "%WORKSPACE%/newman:/etc/newman/newman" --env USER_EMAIL=%USER_EMAIL% --env USER_PASSWORD=%USER_PASSWORD% postman-ecomm-tests run E2E_Ecommerce.postman_collection.json --env-var "USER_EMAIL=%USER_EMAIL%" --env-var "USER_PASSWORD=%USER_PASSWORD%" -r cli,htmlextra --reporter-htmlextra-export "newman/report.html"'
+                script {
+                    // Ensure results dir is clean
+                    bat 'if exist newman rmdir /s /q newman'
+                    bat 'mkdir newman'
+
+                    // Run tests inside Docker
+                    bat '''
+docker run --rm ^
+  -v "%WORKSPACE%:/etc/newman" ^
+  postman_ecomm_tests run E2E_Ecommerce.postman_collection.json ^
+  --env-var USER_EMAIL=%USER_EMAIL% ^
+  --env-var USER_PASSWORD=%USER_PASSWORD% ^
+  -r cli,htmlextra,allure ^
+  --reporter-htmlextra-export newman/report.html ^
+  --reporter-allure-export newman/allure-results
+'''
+                }
             }
         }
+    }
 
-        stage('Publish HTML Report') {
-            steps {
-                echo 'Publishing the HTML report...'
-                // This is the standard way to publish the report so it displays correctly
-                publishHTML(target: [
-                    allowMissing: false,
-                    alwaysLinkToLastBuild: true,
-                    keepAll: true,
-                    reportDir: 'newman',
-                    reportFiles: 'report.html',
-                    reportName: 'Newman Test Report'
-                ])
-            }
+    post {
+        always {
+            // Publish Allure dashboard
+            allure([
+                includeProperties: false,
+                jdk: '',
+                results: [[path: 'newman/allure-results']]
+            ])
+
+            // Publish fallback HTML
+            publishHTML(target: [
+                reportDir: 'newman',
+                reportFiles: 'report.html',
+                reportName: 'Newman HTML Report'
+            ])
+
+            // Archive all reports
+            archiveArtifacts artifacts: 'newman/**'
         }
     }
 }
