@@ -1,15 +1,5 @@
-# Base image
 FROM node:18-alpine
-
-# Set work directory
 WORKDIR /etc/newman
-
-# Install Newman & HTML Extra reporter
-RUN npm install -g newman newman-reporter-htmlextra
-
-# Copy collection and assets
-COPY E2E_Ecommerce.postman_collection.json .
-COPY headerimage@2x.jpg .
-
-# Always run newman by default
-ENTRYPOINT ["newman", "run"]
+RUN apk add --no-cache ca-certificates curl && update-ca-certificates \
+    && npm install -g newman newman-reporter-htmlextra
+ENTRYPOINT ["newman"]
