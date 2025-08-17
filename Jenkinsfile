@@ -1,39 +1,37 @@
 pipeline {
     agent any
-
+    environment {
+        USER_EMAIL = credentials('POSTMAN_ECOM_EMAIL')
+        USER_PASSWORD = credentials('POSTMAN_ECOM_PASSWORD')
+    }
     stages {
-        stage('Build Newman Docker Image') {
+        stage('Build Docker Image') {
             steps {
-                // Build the Docker image with Newman and htmlextra reporter
                 bat 'docker build -t postman_ecomm_tests .'
-				
             }
         }
         stage('Run Newman API Tests') {
             steps {
                 script {
-                    // Ensure folder exists for HTML report output
                     bat 'if not exist newman mkdir newman'
-                    // Run the tests using your custom Docker image, mounting the workspace
-                    bat '''
+                    bat """
                     docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.postman_collection.json ^
+                     --env-var USER_EMAIL=%USER_EMAIL% ^
+                     --env-var USER_PASSWORD=%USER_PASSWORD% ^
                      --reporters cli,htmlextra ^
                      --reporter-htmlextra-export newman/report.html
-                    '''
+                    """
                 }
             }
         }
     }
-
     post {
         always {
-            // Publish the htmlextra HTML report
             publishHTML(target: [
                 reportDir: 'newman',
                 reportFiles: 'report.html',
                 reportName: 'Newman HTML Report'
             ])
-            // Optionally archive the report HTML so you can download it
             archiveArtifacts artifacts: 'newman/report.html'
         }
     }

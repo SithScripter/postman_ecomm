@@ -137,7 +137,7 @@
 								{
 									"key": "productImage",
 									"type": "file",
-									"src": "/D:/Work/Postman collections export/headerimage@2x.jpg"
+									"src": "headerimage@2x.jpg"
 								}
 							]
 						},
