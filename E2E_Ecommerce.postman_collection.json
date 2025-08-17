@@ -308,8 +308,8 @@
 							}
 						],
 						"body": {
-							"mode": "formdata",
-							"formdata": []
+							"mode": "raw",
+							"raw": "{\r\n    \"orders\": [\r\n        {\r\n            \"country\": \"India\",\r\n            \"productOrderedId\": \"{{productID}}\"\r\n        }\r\n    ]\r\n}"
 						},
 						"url": {
 							"raw": "https://rahulshettyacademy.com/api/ecom/order/create-order",
