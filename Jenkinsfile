@@ -29,13 +29,16 @@ pipeline {
             }
         }
 
-        stage('Run Newman API Tests') {
-            steps {
-                script {
-                    bat 'if exist newman rmdir /s /q newman'
-                    bat 'mkdir newman'
+stage('Run Newman API Tests') {
+    steps {
+        script {
+            // Clean and prepare newman dir
+            bat 'if exist newman rmdir /s /q newman'
+            bat 'mkdir newman'
+            bat 'mkdir newman\\allure-results'
 
-                    bat '''
+            // Run Newman inside Docker
+            bat '''
 docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.postman_collection.json ^
   --env-var USER_EMAIL=%USER_EMAIL% ^
   --env-var USER_PASSWORD=%USER_PASSWORD% ^
@@ -45,13 +48,12 @@ docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.post
   --reporter-htmlextra-export newman/report.html ^
   --reporter-allure-export newman/allure-results
 '''
-
-                    // Ensure allure-results exists before echo
-                    bat 'if not exist newman\\allure-results mkdir newman\\allure-results'
-                    bat 'echo Build=%BUILD_NUMBER% > newman\\allure-results\\environment.properties'
-                }
-            }
+            // Add Jenkins build info
+            bat 'echo Build=%BUILD_NUMBER% > newman\\allure-results\\environment.properties'
         }
+    }
+}
+
     }
 
     post {
