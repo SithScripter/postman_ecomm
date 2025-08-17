@@ -5,6 +5,14 @@ pipeline {
         USER_PASSWORD = credentials('POSTMAN_ECOM_PASSWORD')
     }
     stages {
+		
+		stage('Docker DNS Test') {
+  steps {
+    bat 'docker run --rm busybox nslookup rahulshettyacademy.com'
+  }
+}
+
+		
         stage('Build Docker Image') {
             steps {
                 bat 'docker build -t postman_ecomm_tests .'
