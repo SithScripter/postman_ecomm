@@ -29,31 +29,29 @@ pipeline {
             }
         }
 
-stage('Run Newman API Tests') {
-    steps {
-        script {
-            bat '''
-                if exist newman rmdir /s /q newman
-                mkdir newman
-                mkdir newman\\allure-results
+        stage('Run Newman API Tests') {
+            steps {
+                script {
+                    bat '''
+                        if exist newman rmdir /s /q newman
+                        mkdir newman
+                        mkdir newman\\allure-results
 
-                docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.postman_collection.json ^
-                  --env-var USER_EMAIL=%USER_EMAIL% ^
-                  --env-var USER_PASSWORD=%USER_PASSWORD% ^
-                  --timeout-request 10000 ^
-                  --bail ^
-                  --reporters cli,htmlextra,allure ^
-                  --reporter-htmlextra-export newman/report.html ^
-                  --reporter-allure-export newman/allure-results/
+                        docker run --rm -v "%cd%:/etc/newman" postman_ecomm_tests run E2E_Ecommerce.postman_collection.json ^
+                          --env-var USER_EMAIL=%USER_EMAIL% ^
+                          --env-var USER_PASSWORD=%USER_PASSWORD% ^
+                          --timeout-request 10000 ^
+                          --bail ^
+                          --reporters cli,htmlextra,allure ^
+                          --reporter-htmlextra-export newman/report.html ^
+                          --reporter-allure-export newman/allure-results/
 
-                echo Build=%BUILD_NUMBER% > newman\\allure-results\\environment.properties
-            '''
+                        echo Build=%BUILD_NUMBER% > newman\\allure-results\\environment.properties
+                    '''
+                }
+            }
         }
-    }
-}
-}
-
-    }
+    }   // ✅ closes stages
 
     post {
         always {
@@ -84,3 +82,4 @@ stage('Run Newman API Tests') {
             archiveArtifacts artifacts: 'newman/**/*.*', followSymlinks: false
         }
     }
+}
