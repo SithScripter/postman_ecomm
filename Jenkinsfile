@@ -84,4 +84,3 @@ stage('Run Newman API Tests') {
             archiveArtifacts artifacts: 'newman/**/*.*', followSymlinks: false
         }
     }
-}
