@@ -26,7 +26,12 @@
 									"    pm.expect(jsonData.message).to.eql(\"Login Successfully\");\r",
 									"});\r",
 									"pm.execution.setNextRequest(\"Create Product\");\r",
-									""
+									"\r",
+									"// 🔹 Allure metadata\r",
+									"console.log(\"##allure[feature:Authentication]\");\r",
+									"console.log(\"##allure[story:Login API]\");\r",
+									"console.log(\"##allure[severity:critical]\");\r",
+									"console.log(\"##allure[description:Verify that a registered user can log in with valid credentials]\");"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -80,7 +85,13 @@
 									"pm.test(\"Product added Successfully\", function () {\r",
 									"    pm.expect(jsonData.message).to.eql(\"Product Added Successfully\");\r",
 									"});\r",
-									"pm.execution.setNextRequest(\"Create Order\");"
+									"pm.execution.setNextRequest(\"Create Order\");\r",
+									"\r",
+									"// 🔹 Allure metadata\r",
+									"console.log(\"##allure[feature:Products]\");\r",
+									"console.log(\"##allure[story:Create Product]\");\r",
+									"console.log(\"##allure[severity:blocker]\");\r",
+									"console.log(\"##allure[description:Ensure that a logged-in user can successfully create a product]\");"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -169,7 +180,13 @@
 									"pm.test(\"Product Deleted Successfully\", function () {\r",
 									"    pm.expect(jsonData.message).to.eql(\"Product Deleted Successfully\");\r",
 									"});\r",
-									"pm.execution.setNextRequest(null);"
+									"pm.execution.setNextRequest(null);\r",
+									"\r",
+									"// 🔹 Allure metadata\r",
+									"console.log(\"##allure[feature:Products]\");\r",
+									"console.log(\"##allure[story:Delete Product]\");\r",
+									"console.log(\"##allure[severity:minor]\");\r",
+									"console.log(\"##allure[description:Ensure cleanup by deleting a product after tests complete]\");"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -222,7 +239,13 @@
 									"pm.test(\"Order placed Successfully\", function () {\r",
 									"    pm.expect(jsonData.message).to.eql(\"Order Placed Successfully\");\r",
 									"});\r",
-									"pm.execution.setNextRequest(\"Order Details\");"
+									"pm.execution.setNextRequest(\"Order Details\");\r",
+									"\r",
+									"// 🔹 Allure metadata\r",
+									"console.log(\"##allure[feature:Orders]\");\r",
+									"console.log(\"##allure[story:Place Order]\");\r",
+									"console.log(\"##allure[severity:blocker]\");\r",
+									"console.log(\"##allure[description:Validate order placement end-to-end, ensuring checkout works]\");"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -279,6 +302,12 @@
 									"    pm.expect(actualProdName).to.eql(expectedProdName);\r",
 									"});\r",
 									"pm.execution.setNextRequest(\"Delete Product\");\r",
+									"\r",
+									"// 🔹 Allure metadata\r",
+									"console.log(\"##allure[feature:Orders]\");\r",
+									"console.log(\"##allure[story:Order Details]\");\r",
+									"console.log(\"##allure[severity:normal]\");\r",
+									"console.log(\"##allure[description:Verify order details retrieval and confirm product matches expected]\");\r",
 									""
 								],
 								"type": "text/javascript",
