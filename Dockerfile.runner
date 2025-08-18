@@ -1,0 +1,10 @@
+# Dockerfile.runner
+FROM node:18-alpine
+
+WORKDIR /etc/newman
+
+# Install Newman + Allure + HTML Extra reporters
+RUN npm install -g newman newman-reporter-htmlextra newman-reporter-allure
+
+# Keep image generic (no test collections baked in)
+ENTRYPOINT ["newman"]
