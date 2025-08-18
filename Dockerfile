@@ -2,9 +2,12 @@ FROM node:18-alpine
 
 WORKDIR /etc/newman
 
-# Install curl + certs + Newman + reporters (Allure 2 compatible)
-RUN apk add --no-cache ca-certificates curl && update-ca-certificates && \
-    npm install -g newman \
-    newman-reporter-allure
+# Install Newman + HTML extra reporter
+RUN npm install -g newman newman-reporter-htmlextra newman-reporter-allure
 
+# Copy the collection and image file into the container
+COPY E2E_Ecommerce.postman_collection.json .
+COPY headerimage@2x.jpg .
+
+# Set the default command for the container
 ENTRYPOINT ["newman"]
