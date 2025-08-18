@@ -16,6 +16,9 @@ pipeline {
         
         stage('Run Newman API Tests') {
             steps {
+                // *** NEW LINE: Ensure the host directory exists before running Docker ***
+                bat 'if not exist newman mkdir newman'
+
                 // This is the clean, proven command to run the tests
                 bat 'docker run --rm -v "%WORKSPACE%/newman:/etc/newman/newman" --env USER_EMAIL=%USER_EMAIL% --env USER_PASSWORD=%USER_PASSWORD% postman-ecomm-tests run E2E_Ecommerce.postman_collection.json --env-var "USER_EMAIL=%USER_EMAIL%" --env-var "USER_PASSWORD=%USER_PASSWORD%" -r cli,allure --reporter-allure-export "newman/allure-results"'
             }
