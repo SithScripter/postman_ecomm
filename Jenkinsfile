@@ -15,16 +15,17 @@ pipeline {
                     string(credentialsId: 'POSTMAN_ECOM_EMAIL', variable: 'USER_EMAIL'),
                     string(credentialsId: 'POSTMAN_ECOM_PASSWORD', variable: 'USER_PASSWORD')
                 ]) {
-                    bat '''
-                    docker run --rm ^
-                      -v "%WORKSPACE%:/etc/newman" ^
-                      -w "/etc/newman" ^
-                      --env USER_EMAIL --env USER_PASSWORD ^
-                      postman-ecomm-tests run E2E_Ecommerce.postman_collection.json ^
-                      --env-var "USER_EMAIL=%USER_EMAIL%" ^
-                      --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
-                      -r cli,allure --reporter-allure-export "allure-results"
-                    '''
+bat '''
+docker run --rm ^
+  -v "%WORKSPACE%:/etc/newman" ^
+  -w "/etc/newman" ^
+  --env USER_EMAIL --env USER_PASSWORD ^
+  postman-ecomm-tests run E2E_Ecommerce.postman_collection.json ^
+  --env-var "USER_EMAIL=%USER_EMAIL%" ^
+  --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
+  -r cli,allure --reporter-allure-export "allure-results" ^
+  --reporter-allure-simplified-traces
+'''
                 }
             }
         }
