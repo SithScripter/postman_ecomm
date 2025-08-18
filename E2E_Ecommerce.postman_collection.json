@@ -41,7 +41,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"userEmail\": \"forwardtolalit@gmail.com\",\r\n    \"userPassword\": \"jQA@@pHkDwC48\"\r\n}",
+							"raw": "{\r\n    \"userEmail\": \"{{USER_EMAIL}}\",\r\n    \"userPassword\": \"{{USER_PASSWORD}}\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -143,7 +143,7 @@
 								{
 									"key": "productImage",
 									"type": "file",
-									"src": "headerimage@2x.jpg"
+									"src": "/D:/Work/Postman collections export/headerimage@2x.jpg"
 								}
 							]
 						},
