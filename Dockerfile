@@ -1,13 +1,17 @@
+# Dockerfile.standalone
 FROM node:18-alpine
 
 WORKDIR /etc/newman
 
-# Install Newman + HTML extra reporter
+# Install Newman + Allure + HTML Extra reporters
 RUN npm install -g newman newman-reporter-htmlextra newman-reporter-allure
 
-# Copy the collection and image file into the container
+# Copy test collection + assets into container
 COPY E2E_Ecommerce.postman_collection.json .
 COPY headerimage@2x.jpg .
 
-# Set the default command for the container
+# Default entrypoint
 ENTRYPOINT ["newman"]
+
+# Run collection by default (can be overridden)
+CMD ["run", "E2E_Ecommerce.postman_collection.json", "-r", "cli,allure"]
