@@ -25,10 +25,10 @@ pipeline {
                 ]) {
 bat '''
 docker run --rm ^
-  -v "%WORKSPACE%:/etc/newman" ^
+  -v "%WORKSPACE%:/etc/newman" ^       // maps your repo into container
   -w "/etc/newman" ^
   --env USER_EMAIL --env USER_PASSWORD ^
-  postman-ecomm-tests run E2E_Ecommerce.postman_collection.json ^
+  postman-runner:latest run E2E_Ecommerce.postman_collection.json ^
   --env-var "USER_EMAIL=%USER_EMAIL%" ^
   --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
   -r cli,allure --reporter-allure-export "allure-results" ^
