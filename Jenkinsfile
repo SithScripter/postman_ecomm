@@ -8,6 +8,14 @@ pipeline {
                 bat 'docker build -t postman-ecomm-tests .'
             }
         }
+
+        stage('Prepare Workspace') {
+            steps {
+                // Clean up old allure-results before running tests
+                bat 'if exist allure-results rmdir /s /q allure-results'
+                bat 'mkdir allure-results'
+            }
+        }
         
         stage('Run Tests and Generate Report') {
             steps {
