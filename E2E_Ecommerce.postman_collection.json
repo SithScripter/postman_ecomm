@@ -1,24 +1,24 @@
 {
 	"info": {
-		"_postman_id": "702b5146-de98-4713-83ce-0fa6eb20edc0",
+		"_postman_id": "52d532b8-5f81-4386-8dc2-a83cda9f183a",
 		"name": "E2E_Ecommerce",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "43005976",
-		"_collection_link": "https://www.postman.com/docking-module-geoscientist-61772514/workspace/garry/collection/43005976-702b5146-de98-4713-83ce-0fa6eb20edc0?action=share&source=collection_link&creator=43005976"
+		"_collection_link": "https://www.postman.com/docking-module-geoscientist-61772514/workspace/garry/collection/43005976-52d532b8-5f81-4386-8dc2-a83cda9f183a?action=share&source=collection_link&creator=43005976"
 	},
 	"item": [
 		{
 			"name": "Authentication",
 			"item": [
 				{
-					"name": "User Login",
+					"name": "Login",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
 									"//@allure.feature(\"Authentication\")\r",
-									"//@allure.story(\"Login\")\r",
+									"//@allure.story(\"User Login\")\r",
 									"//@allure.severity(\"critical\")\r",
 									"const jsonData = pm.response.json();\r",
 									"const accesToken = jsonData.token;\r",
@@ -41,7 +41,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"userEmail\": \"{{USER_EMAIL}}\",\r\n    \"userPassword\": \"{{USER_PASSWORD}}\"\r\n}",
+							"raw": "{\r\n    \"userEmail\": \"forwardtolalit@gmail.com\",\r\n    \"userPassword\": \"jQA@@pHkDwC48\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -218,6 +218,65 @@
 			"name": "Orders",
 			"item": [
 				{
+					"name": "Create Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//@allure.feature(\"Orders\")\r",
+									"//@allure.story(\"Place order\")\r",
+									"//@allure.severity(\"critical\")\r",
+									"const jsonData = pm.response.json();\r",
+									"const orderIdIs = jsonData.orders[0];\r",
+									"pm.collectionVariables.set(\"orderID\", orderIdIs);\r",
+									"pm.expect(jsonData.message).to.eql(\"Order Placed Successfully\");\r",
+									"pm.test(\"Order placed Successfully\", function () {\r",
+									"    pm.expect(jsonData.message).to.eql(\"Order Placed Successfully\");\r",
+									"});\r",
+									"pm.execution.setNextRequest(\"Order Details\");"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"orders\": [\r\n        {\r\n            \"country\": \"India\",\r\n            \"productOrderedId\": \"{{productID}}\"\r\n        }\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://rahulshettyacademy.com/api/ecom/order/create-order",
+							"protocol": "https",
+							"host": [
+								"rahulshettyacademy",
+								"com"
+							],
+							"path": [
+								"api",
+								"ecom",
+								"order",
+								"create-order"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Order Details",
 					"event": [
 						{
@@ -225,7 +284,7 @@
 							"script": {
 								"exec": [
 									"//@allure.feature(\"Orders\")\r",
-									"//@allure.story(\"View order details\")\r",
+									"//@allure.story(\"Get order details\")\r",
 									"//@allure.severity(\"minor\")\r",
 									"const jsonData = pm.response.json();\r",
 									"const actualProdName = jsonData.data.productName;\r",
@@ -269,79 +328,6 @@
 									"key": "id",
 									"value": "{{orderID}}"
 								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Create Order",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"//@allure.feature(\"Orders\")\r",
-									"//@allure.story(\"Place order\")\r",
-									"//@allure.severity(\"critical\")\r",
-									"\r",
-									"pm.test(\"Status code is 201 Created\", function () {\r",
-									"    pm.response.to.have.status(201);\r",
-									"});\r",
-									"\r",
-									"// Only try to parse the JSON if the status code is correct\r",
-									"if (pm.response.code === 201) {\r",
-									"    const jsonData = pm.response.json();\r",
-									"    const orderIdIs = jsonData.orders[0];\r",
-									"    pm.collectionVariables.set(\"orderID\", orderIdIs);\r",
-									"    \r",
-									"    pm.test(\"Order placed Successfully\", function () {\r",
-									"        pm.expect(jsonData.message).to.eql(\"Order Placed Successfully\");\r",
-									"    });\r",
-									"}\r",
-									"\r",
-									"pm.execution.setNextRequest(\"Order Details\");"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "{{token}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"orders\": [\r\n        {\r\n            \"country\": \"India\",\r\n            \"productOrderedId\": \"{{productID}}\"\r\n        }\r\n    ]\r\n}"
-						},
-						"url": {
-							"raw": "https://rahulshettyacademy.com/api/ecom/order/create-order",
-							"protocol": "https",
-							"host": [
-								"rahulshettyacademy",
-								"com"
-							],
-							"path": [
-								"api",
-								"ecom",
-								"order",
-								"create-order"
 							]
 						}
 					},
