@@ -39,38 +39,33 @@ docker run --rm ^
         }
     }
 
-    post {
-        always {
-            script {
-                // Add Build info
-                bat 'echo Build=%BUILD_NUMBER% > allure-results/environment.properties'
+post {
+    always {
+        script {
+            // Clean old results
+            bat 'if exist allure-results rmdir /s /q allure-results'
+            bat 'mkdir allure-results'
 
-                // Add categories.json (for classifying failures)
-                writeFile file: 'allure-results/categories.json', text: '''
-                [
-                  { "name": "Assertions", "matchedStatuses": ["failed"], "messageRegex": ".*expect.*" },
-                  { "name": "Network Errors", "matchedStatuses": ["broken"], "messageRegex": ".*ECONN.*" },
-                  { "name": "Known Bugs", "matchedStatuses": ["failed"], "traceRegex": ".*BUG.*" }
-                ]
-                '''
+            // Add Build + Executor info
+            bat '''
+echo Build=%BUILD_NUMBER% > allure-results/environment.properties
+echo Executor=Jenkins >> allure-results/environment.properties
+echo BuildUrl=%BUILD_URL% >> allure-results/environment.properties
+echo JobName=%JOB_NAME% >> allure-results/environment.properties
+'''
 
-                // Add executor.json (Jenkins metadata for Allure sidebar)
-                writeFile file: 'allure-results/executor.json', text: """
-                {
-                  "name": "Jenkins",
-                  "type": "jenkins",
-                  "url": "${env.BUILD_URL}",
-                  "buildOrder": ${env.BUILD_NUMBER},
-                  "buildName": "Build #${env.BUILD_NUMBER}",
-                  "buildUrl": "${env.BUILD_URL}",
-                  "reportUrl": "${env.BUILD_URL}AllureReport",
-                  "executorInfo": "Jenkins job ${env.JOB_NAME}"
-                }
-                """
+            // Add categories.json for failure grouping
+            writeFile file: 'allure-results/categories.json', text: '''
+            [
+              { "name": "Assertions", "matchedStatuses": ["failed"], "messageRegex": ".*expect.*" },
+              { "name": "Network Errors", "matchedStatuses": ["broken"], "messageRegex": ".*ECONN.*" },
+              { "name": "Known Bugs", "matchedStatuses": ["failed"], "traceRegex": ".*BUG.*" }
+            ]
+            '''
 
-                // Publish report
-                allure includeProperties: false, reportBuildPolicy: 'ALWAYS', results: [[path: 'allure-results']]
-            }
+            // Publish report
+            allure includeProperties: false, reportBuildPolicy: 'ALWAYS', results: [[path: 'allure-results']]
         }
     }
+}
 }
