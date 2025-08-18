@@ -17,9 +17,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"//@allure.feature(\"Authentication\")\r",
-									"//@allure.story(\"User Login\")\r",
-									"//@allure.severity(\"critical\")\r",
 									"const jsonData = pm.response.json();\r",
 									"const accesToken = jsonData.token;\r",
 									"const userIdIs = jsonData.userId;\r",
@@ -77,9 +74,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"//@allure.feature(\"Products\")\r",
-									"//@allure.story(\"Create a new product\")\r",
-									"//@allure.severity(\"normal\")\r",
 									"const jsonData = pm.response.json();\r",
 									"const productIdIs = jsonData.productId;\r",
 									"pm.collectionVariables.set(\"productID\", productIdIs);\r",
@@ -171,9 +165,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"//@allure.feature(\"Products\")\r",
-									"//@allure.story(\"Delete product\")\r",
-									"//@allure.severity(\"normal\")\r",
 									"const jsonData = pm.response.json();\r",
 									"pm.test(\"Product Deleted Successfully\", function () {\r",
 									"    pm.expect(jsonData.message).to.eql(\"Product Deleted Successfully\");\r",
@@ -224,9 +215,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"//@allure.feature(\"Orders\")\r",
-									"//@allure.story(\"Place order\")\r",
-									"//@allure.severity(\"critical\")\r",
 									"const jsonData = pm.response.json();\r",
 									"const orderIdIs = jsonData.orders[0];\r",
 									"pm.collectionVariables.set(\"orderID\", orderIdIs);\r",
@@ -283,9 +271,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"//@allure.feature(\"Orders\")\r",
-									"//@allure.story(\"Get order details\")\r",
-									"//@allure.severity(\"minor\")\r",
 									"const jsonData = pm.response.json();\r",
 									"const actualProdName = jsonData.data.productName;\r",
 									"const expectedProdName = pm.collectionVariables.get(\"productName\");\r",
