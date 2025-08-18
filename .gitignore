@@ -10,3 +10,6 @@ newman/
 
 #ignore windwos batch files
 *.bat
+
+# Ignore the specific Jenkinsfile (no extension, spaces in name)
+Jenkinsfile-used\ with\ dockerfile\ with\ copy\ commands.
