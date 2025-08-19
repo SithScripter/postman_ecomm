@@ -46,6 +46,8 @@ pipeline {
                         def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
                         if (mode == 'runner') {
 						sh 'ls -l $WORKSPACE/E2E_Ecommerce.postman_collection.json'
+						sh 'docker run --rm -v "$WORKSPACE:/etc/newman" -w /etc/newman postman-ecomm-runner:latest ls -l'
+
 
                             sh '''
 docker run --rm \
