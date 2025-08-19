@@ -21,10 +21,8 @@ pipeline {
                     echo "=== Running in ${mode.toUpperCase()} mode (branch: ${env.BRANCH_NAME}) ==="
 
                     if (mode == 'runner') {
-                        echo "Building runner image..."
                         sh 'docker build -f Dockerfile.runner -t postman-ecomm-runner:latest .'
                     } else {
-                        echo "Building standalone image..."
                         sh 'docker build -f Dockerfile -t postman-ecomm-standalone:latest .'
                     }
                 }
@@ -52,17 +50,18 @@ docker run --rm \
   -v "$WORKSPACE:/etc/newman" \
   -w /etc/newman \
   --env USER_EMAIL --env USER_PASSWORD \
-  postman-ecomm-runner:latest run E2E_Ecommerce.postman_collection.json \
+  postman-ecomm-runner:latest run /etc/newman/E2E_Ecommerce.postman_collection.json \
   --env-var "USER_EMAIL=$USER_EMAIL" \
   --env-var "USER_PASSWORD=$USER_PASSWORD" \
-  -r cli,allure --reporter-allure-export allure-results \
+  -r cli,allure --reporter-allure-export /etc/newman/allure-results \
   --reporter-allure-simplified-traces
 '''
                         } else {
                             sh '''
 docker run --rm \
-  -v "$WORKSPACE/allure-results:/etc/newman/allure-results" \
-  postman-ecomm-standalone:latest run E2E_Ecommerce.postman_collection.json \
+  -v "$WORKSPACE:/etc/newman" \
+  -w /etc/newman \
+  postman-ecomm-standalone:latest run /etc/newman/E2E_Ecommerce.postman_collection.json \
   --env-var "USER_EMAIL=$USER_EMAIL" \
   --env-var "USER_PASSWORD=$USER_PASSWORD" \
   -r cli,allure --reporter-allure-export /etc/newman/allure-results \
@@ -102,7 +101,6 @@ docker run --rm \
                 """
 
                 allure includeProperties: false, reportBuildPolicy: 'ALWAYS', results: [[path: 'allure-results']]
-
                 echo "📊 Allure report available at: ${env.BUILD_URL}AllureReport"
             }
         }
