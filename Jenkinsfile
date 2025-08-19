@@ -45,20 +45,16 @@ pipeline {
                     script {
                         def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
                         if (mode == 'runner') {
-						sh 'ls -l $WORKSPACE/E2E_Ecommerce.postman_collection.json'
-						sh 'docker run --rm -v "$WORKSPACE:/etc/newman" -w /etc/newman postman-ecomm-runner:latest ls -l'
-
-
                             sh '''
 docker run --rm \
   -v "$WORKSPACE:/etc/newman" \
   -w /etc/newman \
   --env USER_EMAIL --env USER_PASSWORD \
-  postman-ecomm-runner:latest run ./E2E_Ecommerce.postman_collection.json \
+  postman-ecomm-runner:latest run E2E_Ecommerce.postman_collection.json \
   --env-var "USER_EMAIL=$USER_EMAIL" \
   --env-var "USER_PASSWORD=$USER_PASSWORD" \
   -r cli,allure \
-  --reporter-allure-export ./allure-results \
+  --reporter-allure-export allure-results \
   --reporter-allure-simplified-traces
 '''
                         } else {
@@ -66,10 +62,11 @@ docker run --rm \
 docker run --rm \
   -v "$WORKSPACE:/etc/newman" \
   -w /etc/newman \
-  postman-ecomm-standalone:latest run /etc/newman/E2E_Ecommerce.postman_collection.json \
+  postman-ecomm-standalone:latest run E2E_Ecommerce.postman_collection.json \
   --env-var "USER_EMAIL=$USER_EMAIL" \
   --env-var "USER_PASSWORD=$USER_PASSWORD" \
-  -r cli,allure --reporter-allure-export /etc/newman/allure-results \
+  -r cli,allure \
+  --reporter-allure-export allure-results \
   --reporter-allure-simplified-traces
 '''
                         }
