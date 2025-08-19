@@ -45,6 +45,13 @@ pipeline {
                     script {
                         def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
                         if (mode == 'runner') {
+						sh '''
+docker run --rm \
+  -v "$WORKSPACE:/etc/newman" \
+  -w /etc/newman \
+  postman-ecomm-runner:latest ls -l /etc/newman
+'''
+						
                             sh '''
 docker run --rm \
   -v "$WORKSPACE:/etc/newman" \
