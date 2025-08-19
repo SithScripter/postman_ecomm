@@ -5,15 +5,22 @@ pipeline {
         choice(
             name: 'EXECUTION_MODE',
             choices: ['runner', 'standalone'],
-            description: 'Choose Docker execution mode (runner = volume mapped, standalone = baked-in)'
+            description: 'Choose Docker execution mode (defaults: main=runner, others=standalone)'
         )
+    }
+
+    environment {
+        DEFAULT_EXECUTION = "${env.BRANCH_NAME == 'main' ? 'runner' : 'standalone'}"
     }
 
     stages {
         stage('Build Docker Image') {
             steps {
                 script {
-                    if (params.EXECUTION_MODE == 'runner') {
+                    def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
+                    echo "=== Running in ${mode.toUpperCase()} mode (branch: ${env.BRANCH_NAME}) ==="
+
+                    if (mode == 'runner') {
                         echo "Building runner image..."
                         bat 'docker build -f Dockerfile.runner -t postman-ecomm-runner:latest .'
                     } else {
@@ -38,7 +45,8 @@ pipeline {
                     string(credentialsId: 'POSTMAN_ECOM_PASSWORD', variable: 'USER_PASSWORD')
                 ]) {
                     script {
-                        if (params.EXECUTION_MODE == 'runner') {
+                        def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
+                        if (mode == 'runner') {
                             bat '''
 docker run --rm ^
   -v "%WORKSPACE%:/etc/newman" ^
@@ -94,6 +102,8 @@ docker run --rm ^
                 """
 
                 allure includeProperties: false, reportBuildPolicy: 'ALWAYS', results: [[path: 'allure-results']]
+
+                echo "📊 Allure report available at: ${env.BUILD_URL}AllureReport"
             }
         }
     }
