@@ -53,10 +53,11 @@ docker run --rm ^
                         } else {
                             bat '''
 docker run --rm ^
+  -v "%WORKSPACE%/allure-results:/etc/newman/allure-results" ^
   postman-ecomm-standalone:latest run E2E_Ecommerce.postman_collection.json ^
   --env-var "USER_EMAIL=%USER_EMAIL%" ^
   --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
-  -r cli,allure --reporter-allure-export allure-results ^
+  -r cli,allure --reporter-allure-export /etc/newman/allure-results ^
   --reporter-allure-simplified-traces
 '''
                         }
