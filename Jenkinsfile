@@ -1,51 +1,76 @@
 pipeline {
     agent any
 
+    parameters {
+        choice(
+            name: 'EXECUTION_MODE',
+            choices: ['runner', 'standalone'],
+            description: 'Choose Docker execution mode (runner = volume mapped, standalone = baked-in)'
+        )
+    }
+
     stages {
         stage('Build Docker Image') {
             steps {
-                echo 'Building the Docker test image...'
-                bat 'docker build -t postman-ecomm-tests .'
+                script {
+                    if (params.EXECUTION_MODE == 'runner') {
+                        echo "Building runner image..."
+                        bat 'docker build -f Dockerfile.runner -t postman-ecomm-runner:latest .'
+                    } else {
+                        echo "Building standalone image..."
+                        bat 'docker build -f Dockerfile -t postman-ecomm-standalone:latest .'
+                    }
+                }
             }
         }
 
         stage('Prepare Workspace') {
             steps {
-                // Clean up old allure-results before running tests
                 bat 'if exist allure-results rmdir /s /q allure-results'
                 bat 'mkdir allure-results'
             }
         }
-        
-stage('Run Tests and Generate Report') {
-    steps {
-        withCredentials([
-            string(credentialsId: 'POSTMAN_ECOM_EMAIL', variable: 'USER_EMAIL'),
-            string(credentialsId: 'POSTMAN_ECOM_PASSWORD', variable: 'USER_PASSWORD')
-        ]) {
-bat '''
+
+        stage('Run Tests and Generate Report') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'POSTMAN_ECOM_EMAIL', variable: 'USER_EMAIL'),
+                    string(credentialsId: 'POSTMAN_ECOM_PASSWORD', variable: 'USER_PASSWORD')
+                ]) {
+                    script {
+                        if (params.EXECUTION_MODE == 'runner') {
+                            bat '''
 docker run --rm ^
   -v "%WORKSPACE%:/etc/newman" ^
   -w /etc/newman ^
   --env USER_EMAIL --env USER_PASSWORD ^
-  postman-runner:latest run E2E_Ecommerce.postman_collection.json ^
+  postman-ecomm-runner:latest run E2E_Ecommerce.postman_collection.json ^
   --env-var "USER_EMAIL=%USER_EMAIL%" ^
   --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
   -r cli,allure --reporter-allure-export allure-results ^
   --reporter-allure-simplified-traces
 '''
+                        } else {
+                            bat '''
+docker run --rm ^
+  postman-ecomm-standalone:latest run E2E_Ecommerce.postman_collection.json ^
+  --env-var "USER_EMAIL=%USER_EMAIL%" ^
+  --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
+  -r cli,allure --reporter-allure-export allure-results ^
+  --reporter-allure-simplified-traces
+'''
+                        }
+                    }
+                }
+            }
         }
-    }
-}
     }
 
     post {
         always {
             script {
-                // Add Build info
                 bat 'echo Build=%BUILD_NUMBER% > allure-results/environment.properties'
 
-                // Add categories.json (for classifying failures)
                 writeFile file: 'allure-results/categories.json', text: '''
                 [
                   { "name": "Assertions", "matchedStatuses": ["failed"], "messageRegex": ".*expect.*" },
@@ -54,7 +79,6 @@ docker run --rm ^
                 ]
                 '''
 
-                // Add executor.json (Jenkins metadata for Allure sidebar)
                 writeFile file: 'allure-results/executor.json', text: """
                 {
                   "name": "Jenkins",
@@ -68,7 +92,6 @@ docker run --rm ^
                 }
                 """
 
-                // Publish report
                 allure includeProperties: false, reportBuildPolicy: 'ALWAYS', results: [[path: 'allure-results']]
             }
         }
