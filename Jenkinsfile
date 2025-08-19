@@ -36,51 +36,54 @@ pipeline {
             }
         }
 
-        stage('Run Tests and Generate Report') {
-            steps {
-                withCredentials([
-                    string(credentialsId: 'POSTMAN_ECOM_EMAIL', variable: 'USER_EMAIL'),
-                    string(credentialsId: 'POSTMAN_ECOM_PASSWORD', variable: 'USER_PASSWORD')
-                ]) {
-                    script {
-                        def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
-                        if (mode == 'runner') {
-						sh '''
+stage('Run Tests and Generate Report') {
+    steps {
+        withCredentials([
+            string(credentialsId: 'POSTMAN_ECOM_EMAIL', variable: 'USER_EMAIL'),
+            string(credentialsId: 'POSTMAN_ECOM_PASSWORD', variable: 'USER_PASSWORD')
+        ]) {
+            script {
+                def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
+                if (mode == 'runner') {
+                    // Debug: list files inside the mounted /etc/newman
+                    sh '''
 docker run --rm \
   -v "$WORKSPACE:/etc/newman" \
   -w /etc/newman \
+  --entrypoint "" \
   postman-ecomm-runner:latest ls -l /etc/newman
 '''
-						
-                            sh '''
+
+                    // Actual test run
+                    sh '''
 docker run --rm \
   -v "$WORKSPACE:/etc/newman" \
   -w /etc/newman \
   --env USER_EMAIL --env USER_PASSWORD \
-  postman-ecomm-runner:latest run /etc/newman/E2E_Ecommerce.postman_collection.json \
-  --env-var "USER_EMAIL=$USER_EMAIL" \
-  --env-var "USER_PASSWORD=$USER_PASSWORD" \
-  -r cli,allure \
-  --reporter-allure-export /etc/newman/allure-results \
-  --reporter-allure-simplified-traces
-'''
-                        } else {
-                            sh '''
-docker run --rm \
-  -v "$WORKSPACE:/etc/newman" \
-  -w /etc/newman \
-  postman-ecomm-standalone:latest run E2E_Ecommerce.postman_collection.json \
+  postman-ecomm-runner:latest run E2E_Ecommerce.postman_collection.json \
   --env-var "USER_EMAIL=$USER_EMAIL" \
   --env-var "USER_PASSWORD=$USER_PASSWORD" \
   -r cli,allure \
   --reporter-allure-export allure-results \
   --reporter-allure-simplified-traces
 '''
-                        }
-                    }
+                } else {
+                    sh '''
+docker run --rm \
+  -v "$WORKSPACE:/etc/newman" \
+  -w /etc/newman \
+  postman-ecomm-standalone:latest run /etc/newman/E2E_Ecommerce.postman_collection.json \
+  --env-var "USER_EMAIL=$USER_EMAIL" \
+  --env-var "USER_PASSWORD=$USER_PASSWORD" \
+  -r cli,allure \
+  --reporter-allure-export /etc/newman/allure-results \
+  --reporter-allure-simplified-traces
+'''
                 }
             }
         }
+    }
+}
     }
 
     post {
