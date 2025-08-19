@@ -33,10 +33,8 @@ pipeline {
 
         stage('Prepare Workspace') {
             steps {
-                sh '''
-                    rm -rf allure-results
-                    mkdir -p allure-results
-                '''
+                sh 'rm -rf allure-results'
+                sh 'mkdir -p allure-results'
             }
         }
 
@@ -53,9 +51,8 @@ pipeline {
 docker run --rm \
   -v "$WORKSPACE:/etc/newman" \
   -w /etc/newman \
-  --env USER_EMAIL \
-  --env USER_PASSWORD \
-  postman-ecomm-runner:latest run /etc/newman/E2E_Ecommerce.postman_collection.json \
+  --env USER_EMAIL --env USER_PASSWORD \
+  postman-ecomm-runner:latest run E2E_Ecommerce.postman_collection.json \
   --env-var "USER_EMAIL=$USER_EMAIL" \
   --env-var "USER_PASSWORD=$USER_PASSWORD" \
   -r cli,allure --reporter-allure-export allure-results \
@@ -65,7 +62,7 @@ docker run --rm \
                             sh '''
 docker run --rm \
   -v "$WORKSPACE/allure-results:/etc/newman/allure-results" \
-  postman-ecomm-standalone:latest run /etc/newman/E2E_Ecommerce.postman_collection.json \
+  postman-ecomm-standalone:latest run E2E_Ecommerce.postman_collection.json \
   --env-var "USER_EMAIL=$USER_EMAIL" \
   --env-var "USER_PASSWORD=$USER_PASSWORD" \
   -r cli,allure --reporter-allure-export /etc/newman/allure-results \
