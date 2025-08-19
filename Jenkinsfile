@@ -49,7 +49,7 @@ pipeline {
 
                             sh '''
 docker run --rm \
-  -v "$WORKSPACE:/etc/newman" \
+  -v "$(pwd):/etc/newman" \
   -w /etc/newman \
   --env USER_EMAIL --env USER_PASSWORD \
   postman-ecomm-runner:latest run /etc/newman/E2E_Ecommerce.postman_collection.json \
