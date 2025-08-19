@@ -22,10 +22,10 @@ pipeline {
 
                     if (mode == 'runner') {
                         echo "Building runner image..."
-                        bat 'docker build -f Dockerfile.runner -t postman-ecomm-runner:latest .'
+                        sh 'docker build -f Dockerfile.runner -t postman-ecomm-runner:latest .'
                     } else {
                         echo "Building standalone image..."
-                        bat 'docker build -f Dockerfile -t postman-ecomm-standalone:latest .'
+                        sh 'docker build -f Dockerfile -t postman-ecomm-standalone:latest .'
                     }
                 }
             }
@@ -33,8 +33,8 @@ pipeline {
 
         stage('Prepare Workspace') {
             steps {
-                bat 'if exist allure-results rmdir /s /q allure-results'
-                bat 'mkdir allure-results'
+                sh 'if exist allure-results rmdir /s /q allure-results'
+                sh 'mkdir allure-results'
             }
         }
 
@@ -47,7 +47,7 @@ pipeline {
                     script {
                         def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
                         if (mode == 'runner') {
-                            bat '''
+                            sh '''
 docker run --rm ^
   -v "%WORKSPACE%:/etc/newman" ^
   -w /etc/newman ^
@@ -59,7 +59,7 @@ docker run --rm ^
   --reporter-allure-simplified-traces
 '''
                         } else {
-                            bat '''
+                            sh '''
 docker run --rm ^
   -v "%WORKSPACE%/allure-results:/etc/newman/allure-results" ^
   postman-ecomm-standalone:latest run E2E_Ecommerce.postman_collection.json ^
@@ -78,7 +78,7 @@ docker run --rm ^
     post {
         always {
             script {
-                bat 'echo Build=%BUILD_NUMBER% > allure-results/environment.properties'
+                sh 'echo Build=%BUILD_NUMBER% > allure-results/environment.properties'
 
                 writeFile file: 'allure-results/categories.json', text: '''
                 [
