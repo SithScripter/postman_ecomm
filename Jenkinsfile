@@ -52,10 +52,10 @@ docker run --rm \
   -v "$WORKSPACE:/etc/newman" \
   -w /etc/newman \
   --env USER_EMAIL --env USER_PASSWORD \
-  postman-ecomm-runner:latest run E2E_Ecommerce.postman_collection.json \
+  postman-ecomm-runner:latest run /etc/newman/E2E_Ecommerce.postman_collection.json \
   --env-var "USER_EMAIL=$USER_EMAIL" \
   --env-var "USER_PASSWORD=$USER_PASSWORD" \
-  -r cli,allure --reporter-allure-export allure-results \
+  -r cli,allure --reporter-allure-export /etc/newman/allure-results \
   --reporter-allure-simplified-traces
 '''
                         } else {
