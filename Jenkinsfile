@@ -14,6 +14,15 @@ pipeline {
     }
 
     stages {
+		// *** NEW STAGE: This is the missing piece ***
+        stage('Checkout Code') {
+            steps {
+                echo "Checking out code from Git..."
+                checkout scm
+            }
+        }
+	
+	
         stage('Build Docker Image') {
             steps {
                 script {
