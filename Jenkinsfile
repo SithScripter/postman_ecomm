@@ -21,6 +21,17 @@ pipeline {
                 checkout scm
             }
         }
+		
+		stage('Verify Workspace') {
+    steps {
+        sh '''
+        echo "=== Host workspace contents ==="
+        ls -l $WORKSPACE
+        echo "=== Subfolders ==="
+        find $WORKSPACE -maxdepth 2 -type f
+        '''
+    }
+}
 	
 	
         stage('Build Docker Image') {
@@ -66,7 +77,7 @@ docker run --rm \
                     // Actual test run
                     sh '''
 docker run --rm \
-  -v "$WORKSPACE:/etc/newman" \
+  -v "$(pwd):/etc/newman" \
   -w /etc/newman \
   --env USER_EMAIL --env USER_PASSWORD \
   postman-ecomm-runner:latest run E2E_Ecommerce.postman_collection.json \
