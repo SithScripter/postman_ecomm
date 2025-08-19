@@ -33,8 +33,10 @@ pipeline {
 
         stage('Prepare Workspace') {
             steps {
-                sh 'if exist allure-results rmdir /s /q allure-results'
-                sh 'mkdir allure-results'
+                sh '''
+                    rm -rf allure-results
+                    mkdir -p allure-results
+                '''
             }
         }
 
@@ -48,24 +50,25 @@ pipeline {
                         def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
                         if (mode == 'runner') {
                             sh '''
-docker run --rm ^
-  -v "%WORKSPACE%:/etc/newman" ^
-  -w /etc/newman ^
-  --env USER_EMAIL --env USER_PASSWORD ^
-  postman-ecomm-runner:latest run E2E_Ecommerce.postman_collection.json ^
-  --env-var "USER_EMAIL=%USER_EMAIL%" ^
-  --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
-  -r cli,allure --reporter-allure-export allure-results ^
+docker run --rm \
+  -v "$WORKSPACE:/etc/newman" \
+  -w /etc/newman \
+  --env USER_EMAIL \
+  --env USER_PASSWORD \
+  postman-ecomm-runner:latest run E2E_Ecommerce.postman_collection.json \
+  --env-var "USER_EMAIL=$USER_EMAIL" \
+  --env-var "USER_PASSWORD=$USER_PASSWORD" \
+  -r cli,allure --reporter-allure-export allure-results \
   --reporter-allure-simplified-traces
 '''
                         } else {
                             sh '''
-docker run --rm ^
-  -v "%WORKSPACE%/allure-results:/etc/newman/allure-results" ^
-  postman-ecomm-standalone:latest run E2E_Ecommerce.postman_collection.json ^
-  --env-var "USER_EMAIL=%USER_EMAIL%" ^
-  --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
-  -r cli,allure --reporter-allure-export /etc/newman/allure-results ^
+docker run --rm \
+  -v "$WORKSPACE/allure-results:/etc/newman/allure-results" \
+  postman-ecomm-standalone:latest run E2E_Ecommerce.postman_collection.json \
+  --env-var "USER_EMAIL=$USER_EMAIL" \
+  --env-var "USER_PASSWORD=$USER_PASSWORD" \
+  -r cli,allure --reporter-allure-export /etc/newman/allure-results \
   --reporter-allure-simplified-traces
 '''
                         }
@@ -78,7 +81,7 @@ docker run --rm ^
     post {
         always {
             script {
-                sh 'echo Build=%BUILD_NUMBER% > allure-results/environment.properties'
+                sh 'echo Build=$BUILD_NUMBER > allure-results/environment.properties'
 
                 writeFile file: 'allure-results/categories.json', text: '''
                 [
