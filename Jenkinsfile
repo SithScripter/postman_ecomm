@@ -14,26 +14,24 @@ pipeline {
     }
 
     stages {
-		// *** NEW STAGE: This is the missing piece ***
         stage('Checkout Code') {
             steps {
-                echo "Checking out code from Git..."
-                checkout scm
+                echo "Checking out source..."
+                checkout scm   // ✅ single reliable checkout, early
             }
         }
-		
-		stage('Verify Workspace') {
-    steps {
-        sh '''
-        echo "=== Host workspace contents ==="
-        ls -l $WORKSPACE
-        echo "=== Subfolders ==="
-        find $WORKSPACE -maxdepth 2 -type f
-        '''
-    }
-}
-	
-	
+
+        stage('Verify Workspace') {
+            steps {
+                sh '''
+                echo "=== Host workspace contents ==="
+                ls -l $WORKSPACE
+                echo "=== Subfolders ==="
+                find $WORKSPACE -maxdepth 2 -type f
+                '''
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -56,28 +54,18 @@ pipeline {
             }
         }
 
-stage('Run Tests and Generate Report') {
-    steps {
-        withCredentials([
-            string(credentialsId: 'POSTMAN_ECOM_EMAIL', variable: 'USER_EMAIL'),
-            string(credentialsId: 'POSTMAN_ECOM_PASSWORD', variable: 'USER_PASSWORD')
-        ]) {
-            script {
-                def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
-                if (mode == 'runner') {
-                    // Debug: list files inside the mounted /etc/newman
-                    sh '''
+        stage('Run Tests and Generate Report') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'POSTMAN_ECOM_EMAIL', variable: 'USER_EMAIL'),
+                    string(credentialsId: 'POSTMAN_ECOM_PASSWORD', variable: 'USER_PASSWORD')
+                ]) {
+                    script {
+                        def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
+                        if (mode == 'runner') {
+                            sh '''
 docker run --rm \
   -v "$WORKSPACE:/etc/newman" \
-  -w /etc/newman \
-  --entrypoint "" \
-  postman-ecomm-runner:latest ls -l /etc/newman
-'''
-
-                    // Actual test run
-                    sh '''
-docker run --rm \
-  -v "$(pwd):/etc/newman" \
   -w /etc/newman \
   --env USER_EMAIL --env USER_PASSWORD \
   postman-ecomm-runner:latest run /etc/newman/E2E_Ecommerce.postman_collection.json \
@@ -87,8 +75,8 @@ docker run --rm \
   --reporter-allure-export /etc/newman/allure-results \
   --reporter-allure-simplified-traces
 '''
-                } else {
-                    sh '''
+                        } else {
+                            sh '''
 docker run --rm \
   -v "$WORKSPACE:/etc/newman" \
   -w /etc/newman \
@@ -99,11 +87,11 @@ docker run --rm \
   --reporter-allure-export /etc/newman/allure-results \
   --reporter-allure-simplified-traces
 '''
+                        }
+                    }
                 }
             }
         }
-    }
-}
     }
 
     post {
