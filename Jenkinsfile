@@ -11,7 +11,6 @@ pipeline {
 
     environment {
         DEFAULT_EXECUTION = "${env.BRANCH_NAME == 'main' ? 'runner' : 'standalone'}"
-        HOST_WORKSPACE = "${env.WORKSPACE}"
     }
 
     stages {
@@ -50,46 +49,51 @@ pipeline {
 
         stage('Run Tests and Generate Report') {
             steps {
-                checkout scm   // ensure code is in workspace
+                checkout scm   // ensure latest files present
+
                 withCredentials([
                     string(credentialsId: 'POSTMAN_ECOM_EMAIL', variable: 'USER_EMAIL'),
                     string(credentialsId: 'POSTMAN_ECOM_PASSWORD', variable: 'USER_PASSWORD')
                 ]) {
                     script {
                         def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
+
                         if (mode == 'runner') {
                             sh '''
-                            docker run --rm \
-                              -v "$HOST_WORKSPACE:/etc/newman" \
-                              -w /etc/newman \
-                              --env USER_EMAIL --env USER_PASSWORD \
-                              postman-ecomm-runner:latest sh -c "
-                                echo '=== Inside container /etc/newman contents ===' && \
-                                ls -l /etc/newman && \
-                                newman run E2E_Ecommerce.postman_collection.json \
-                                  --env-var USER_EMAIL=$USER_EMAIL \
-                                  --env-var USER_PASSWORD=$USER_PASSWORD \
-                                  -r cli,allure \
-                                  --reporter-allure-export allure-results \
-                                  --reporter-allure-simplified-traces
-                              "
-                            '''
+docker run --rm \
+  -v "$WORKSPACE:/etc/newman" \
+  -w /etc/newman \
+  --env USER_EMAIL --env USER_PASSWORD \
+  --entrypoint sh \
+  postman-ecomm-runner:latest -c "
+    echo '=== Inside container /etc/newman contents ===' && \
+    ls -l /etc/newman && \
+    newman run E2E_Ecommerce.postman_collection.json \
+      --env-var USER_EMAIL=$USER_EMAIL \
+      --env-var USER_PASSWORD=$USER_PASSWORD \
+      -r cli,allure \
+      --reporter-allure-export allure-results \
+      --reporter-allure-simplified-traces
+  "
+'''
                         } else {
                             sh '''
-                            docker run --rm \
-                              -v "$HOST_WORKSPACE:/etc/newman" \
-                              -w /etc/newman \
-                              postman-ecomm-standalone:latest sh -c "
-                                echo '=== Inside container /etc/newman contents ===' && \
-                                ls -l /etc/newman && \
-                                newman run E2E_Ecommerce.postman_collection.json \
-                                  --env-var USER_EMAIL=$USER_EMAIL \
-                                  --env-var USER_PASSWORD=$USER_PASSWORD \
-                                  -r cli,allure \
-                                  --reporter-allure-export allure-results \
-                                  --reporter-allure-simplified-traces
-                              "
-                            '''
+docker run --rm \
+  -v "$WORKSPACE:/etc/newman" \
+  -w /etc/newman \
+  --env USER_EMAIL --env USER_PASSWORD \
+  --entrypoint sh \
+  postman-ecomm-standalone:latest -c "
+    echo '=== Inside container /etc/newman contents ===' && \
+    ls -l /etc/newman && \
+    newman run E2E_Ecommerce.postman_collection.json \
+      --env-var USER_EMAIL=$USER_EMAIL \
+      --env-var USER_PASSWORD=$USER_PASSWORD \
+      -r cli,allure \
+      --reporter-allure-export allure-results \
+      --reporter-allure-simplified-traces
+  "
+'''
                         }
                     }
                 }
