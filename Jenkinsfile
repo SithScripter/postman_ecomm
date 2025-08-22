@@ -5,7 +5,7 @@ pipeline {
         choice(
             name: 'EXECUTION_MODE',
             choices: ['runner', 'standalone'],
-            description: 'Choose Docker execution mode (defaults: main=runner, others=standalone)'
+            description: 'Choose Docker execution mode (defaults to runner)'
         )
     }
 
@@ -18,26 +18,22 @@ pipeline {
             steps {
                 script {
                     def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
-                    echo "=== Running in ${mode.toUpperCase()} mode (branch: ${env.BRANCH_NAME}) ==="
-
+                    echo "=== Running in ${mode.toUpperCase()} mode ==="
                     if (mode == 'runner') {
-                        echo "Building runner image..."
                         sh 'docker build -f Dockerfile.runner -t postman-ecomm-runner:latest .'
                     } else {
-                        echo "Building standalone image..."
                         sh 'docker build -f Dockerfile -t postman-ecomm-standalone:latest .'
                     }
                 }
             }
         }
 
-stage('Prepare Workspace') {
-    steps {
-        // Correct Linux commands to remove and create a directory
-        sh 'rm -rf allure-results'
-        sh 'mkdir -p allure-results'
-    }
-}
+        stage('Prepare Workspace') {
+            steps {
+                sh 'rm -rf allure-results'
+                sh 'mkdir -p allure-results'
+            }
+        }
 
         stage('Run Tests and Generate Report') {
             steps {
@@ -48,27 +44,27 @@ stage('Prepare Workspace') {
                     script {
                         def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
                         if (mode == 'runner') {
+                            // Correct Linux line continuation with backslash (\)
                             sh '''
-docker run --rm ^
-  -v "%WORKSPACE%:/etc/newman" ^
-  -w /etc/newman ^
-  --env USER_EMAIL --env USER_PASSWORD ^
-  postman-ecomm-runner:latest run E2E_Ecommerce.postman_collection.json ^
-  --env-var "USER_EMAIL=%USER_EMAIL%" ^
-  --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
-  -r cli,allure --reporter-allure-export allure-results ^
-  --reporter-allure-simplified-traces
-'''
+                                docker run --rm \
+                                -v "$WORKSPACE:/etc/newman" \
+                                -w /etc/newman \
+                                --env USER_EMAIL --env USER_PASSWORD \
+                                postman-ecomm-runner:latest run E2E_Ecommerce.postman_collection.json \
+                                --env-var "USER_EMAIL=$USER_EMAIL" \
+                                --env-var "USER_PASSWORD=$USER_PASSWORD" \
+                                -r cli,allure --reporter-allure-export allure-results
+                            '''
                         } else {
+                            // Correct Linux line continuation with backslash (\)
                             sh '''
-docker run --rm ^
-  -v "%WORKSPACE%/allure-results:/etc/newman/allure-results" ^
-  postman-ecomm-standalone:latest run E2E_Ecommerce.postman_collection.json ^
-  --env-var "USER_EMAIL=%USER_EMAIL%" ^
-  --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
-  -r cli,allure --reporter-allure-export /etc/newman/allure-results ^
-  --reporter-allure-simplified-traces
-'''
+                                docker run --rm \
+                                -v "$WORKSPACE/allure-results:/etc/newman/allure-results" \
+                                postman-ecomm-standalone:latest run E2E_Ecommerce.postman_collection.json \
+                                --env-var "USER_EMAIL=$USER_EMAIL" \
+                                --env-var "USER_PASSWORD=$USER_PASSWORD" \
+                                -r cli,allure --reporter-allure-export /etc/newman/allure-results
+                            '''
                         }
                     }
                 }
