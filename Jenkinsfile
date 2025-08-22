@@ -31,12 +31,13 @@ pipeline {
             }
         }
 
-        stage('Prepare Workspace') {
-            steps {
-                sh 'if exist allure-results rmdir /s /q allure-results'
-                sh 'mkdir allure-results'
-            }
-        }
+stage('Prepare Workspace') {
+    steps {
+        // Correct Linux commands to remove and create a directory
+        sh 'rm -rf allure-results'
+        sh 'mkdir -p allure-results'
+    }
+}
 
         stage('Run Tests and Generate Report') {
             steps {
