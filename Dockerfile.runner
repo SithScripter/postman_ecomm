@@ -1,10 +1,9 @@
-# Dockerfile.runner
 FROM node:18-alpine
 
 WORKDIR /etc/newman
 
-# Install Newman + Allure + HTML Extra reporters
+# Install Newman + Allure + HTML extra reporters
 RUN npm install -g newman newman-reporter-htmlextra newman-reporter-allure
 
-# Keep image generic (no test collections baked in)
-ENTRYPOINT ["newman"]
+# Copy the Postman collection into the image
+COPY E2E_Ecommerce.postman_collection.json .
