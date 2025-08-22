@@ -85,42 +85,39 @@ pipeline {
     }
   }
 
-  post {
+post {
     always {
-      script {
-        // add the extra Allure metadata you had before
-        sh '''#!/bin/sh
-          set -eu
-          printf "Build=%s\\n" "$BUILD_NUMBER" > allure-results/environment.properties
-        '''
+        script {
+            // Correct Linux syntax for env props
+            sh 'echo "Build=$BUILD_NUMBER" > allure-results/environment.properties'
 
-        writeFile file: 'allure-results/categories.json', text: '''[
-  { "name": "Assertions",    "matchedStatuses": ["failed"], "messageRegex": ".*expect.*" },
-  { "name": "Network Errors","matchedStatuses": ["broken"], "messageRegex": ".*ECONN.*" },
-  { "name": "Known Bugs",    "matchedStatuses": ["failed"], "traceRegex":    ".*BUG.*" }
-]'''
+            // Clean JSON
+            writeFile file: 'allure-results/categories.json', text: '''[
+              { "name": "Assertions", "matchedStatuses": ["failed"], "messageRegex": ".*expect.*" },
+              { "name": "Network Errors", "matchedStatuses": ["broken"], "messageRegex": ".*ECONN.*" },
+              { "name": "Known Bugs", "matchedStatuses": ["failed"], "traceRegex": ".*BUG.*" }
+            ]'''
 
-        writeFile file: 'allure-results/executor.json', text: """
-{
-  "name": "Jenkins",
-  "type": "jenkins",
-  "url": "${env.BUILD_URL}",
-  "buildOrder": ${env.BUILD_NUMBER},
-  "buildName": "Build #${env.BUILD_NUMBER}",
-  "buildUrl": "${env.BUILD_URL}",
-  "reportUrl": "${env.BUILD_URL}AllureReport",
-  "executorInfo": "Jenkins job ${env.JOB_NAME}"
-}
-"""
+            // Executor metadata
+            writeFile file: 'allure-results/executor.json', text: """
+            {
+              "name": "Jenkins",
+              "type": "jenkins",
+              "url": "${env.BUILD_URL}",
+              "buildOrder": ${env.BUILD_NUMBER},
+              "buildName": "Build #${env.BUILD_NUMBER}",
+              "buildUrl": "${env.BUILD_URL}",
+              "reportUrl": "${env.BUILD_URL}AllureReport",
+              "executorInfo": "Jenkins job ${env.JOB_NAME}"
+            }
+            """
 
-        // publish results to Jenkins Allure plugin
-        allure includeProperties: false, reportBuildPolicy: 'ALWAYS', results: [[path: 'allure-results']]
+            // This step requires the Allure Jenkins Plugin
+            allure includeProperties: false, reportBuildPolicy: 'ALWAYS', results: [[path: 'allure-results']]
 
-        // optional: keep the raw results as artifacts too
-        archiveArtifacts artifacts: 'allure-results/**', fingerprint: true
-
-        echo "📊 Allure report available at: ${env.BUILD_URL}AllureReport"
-      }
+            echo "📊 Allure report available at: ${env.BUILD_URL}AllureReport"
+        }
     }
-  }
+}
+
 }
