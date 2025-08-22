@@ -49,20 +49,23 @@ pipeline {
 
             // mount ONLY the results folder so Allure can read it after the container exits
             if (mode == 'runner') {
-              sh '''#!/bin/sh
-                set -eu
-                docker run --rm \
-                  --env USER_EMAIL \
-                  --env USER_PASSWORD \
-                  -v "$(pwd)/allure-results:/etc/newman/allure-results" \
-                  postman-ecomm-runner:latest \
-                  newman run E2E_Ecommerce.postman_collection.json \
-                    --env-var USER_EMAIL="$USER_EMAIL" \
-                    --env-var USER_PASSWORD="$USER_PASSWORD" \
-                    -r cli,allure \
-                    --reporter-allure-export /etc/newman/allure-results \
-                    --reporter-allure-simplified-traces
-              '''
+sh '''#!/bin/sh
+  set -eu
+  echo ">>> Workspace path: $(pwd)"
+  docker run --rm \
+    --env USER_EMAIL \
+    --env USER_PASSWORD \
+    -v "$(pwd)/allure-results:/etc/newman/allure-results" \
+    postman-ecomm-runner:latest \
+    newman run /etc/newman/E2E_Ecommerce.postman_collection.json \
+      --env-var USER_EMAIL="$USER_EMAIL" \
+      --env-var USER_PASSWORD="$USER_PASSWORD" \
+      -r cli,allure \
+      --reporter-allure-export /etc/newman/allure-results \
+      --reporter-allure-simplified-traces
+  echo ">>> After container, allure-results content:"
+  ls -l allure-results || true
+'''
             } else {
               sh '''#!/bin/sh
                 set -eu
