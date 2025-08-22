@@ -93,6 +93,7 @@ docker run --rm \
                 ]
                 '''
 
+
                 writeFile file: 'allure-results/executor.json', text: """
                 {
                   "name": "Jenkins",
