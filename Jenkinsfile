@@ -54,7 +54,7 @@ pipeline {
                 docker run --rm \
                   --env USER_EMAIL \
                   --env USER_PASSWORD \
-                  -v "$WORKSPACE/allure-results:/etc/newman/allure-results" \
+                  -v "$(pwd)/allure-results:/etc/newman/allure-results" \
                   postman-ecomm-runner:latest \
                   newman run E2E_Ecommerce.postman_collection.json \
                     --env-var USER_EMAIL="$USER_EMAIL" \
