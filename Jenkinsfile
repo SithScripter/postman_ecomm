@@ -5,59 +5,69 @@ pipeline {
         choice(
             name: 'EXECUTION_MODE',
             choices: ['runner', 'standalone'],
-            description: 'Choose Docker execution mode (defaults to runner)'
+            description: 'Choose Docker execution mode (defaults: main=runner, others=standalone)'
         )
     }
 
     environment {
-        EXECUTION_MODE = "${params.EXECUTION_MODE ?: 'runner'}"
+        DEFAULT_EXECUTION = "${env.BRANCH_NAME == 'main' ? 'runner' : 'standalone'}"
     }
 
     stages {
         stage('Build Docker Image') {
             steps {
                 script {
-                    echo "=== Running in ${env.EXECUTION_MODE.toUpperCase()} mode ==="
-                    if (env.EXECUTION_MODE == 'runner') {
+                    def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
+                    echo "=== Running in ${mode.toUpperCase()} mode (branch: ${env.BRANCH_NAME}) ==="
+
+                    if (mode == 'runner') {
+                        echo "Building runner image..."
                         sh 'docker build -f Dockerfile.runner -t postman-ecomm-runner:latest .'
                     } else {
+                        echo "Building standalone image..."
                         sh 'docker build -f Dockerfile -t postman-ecomm-standalone:latest .'
                     }
                 }
             }
         }
 
-        stage('Run API Tests') {
+        stage('Prepare Workspace') {
+            steps {
+                sh 'if exist allure-results rmdir /s /q allure-results'
+                sh 'mkdir allure-results'
+            }
+        }
+
+        stage('Run Tests and Generate Report') {
             steps {
                 withCredentials([
                     string(credentialsId: 'POSTMAN_ECOM_EMAIL', variable: 'USER_EMAIL'),
                     string(credentialsId: 'POSTMAN_ECOM_PASSWORD', variable: 'USER_PASSWORD')
                 ]) {
                     script {
-                        if (env.EXECUTION_MODE == 'runner') {
+                        def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
+                        if (mode == 'runner') {
                             sh '''
-                                docker run --rm \
-                                -v "$WORKSPACE:/etc/newman" \
-                                -w /etc/newman \
-                                --env USER_EMAIL \
-                                --env USER_PASSWORD \
-                                postman-ecomm-runner:latest run E2E_Ecommerce.postman_collection.json \
-                                --env-var "USER_EMAIL=$USER_EMAIL" \
-                                --env-var "USER_PASSWORD=$USER_PASSWORD" \
-                                -r cli,allure --reporter-allure-export allure-results
-                            '''
+docker run --rm ^
+  -v "%WORKSPACE%:/etc/newman" ^
+  -w /etc/newman ^
+  --env USER_EMAIL --env USER_PASSWORD ^
+  postman-ecomm-runner:latest run E2E_Ecommerce.postman_collection.json ^
+  --env-var "USER_EMAIL=%USER_EMAIL%" ^
+  --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
+  -r cli,allure --reporter-allure-export allure-results ^
+  --reporter-allure-simplified-traces
+'''
                         } else {
-                            // Standalone logic
                             sh '''
-                                docker run --rm \
-                                -v "$WORKSPACE/allure-results:/etc/newman/allure-results" \
-                                --env USER_EMAIL \
-                                --env USER_PASSWORD \
-                                postman-ecomm-standalone:latest \
-                                --env-var "USER_EMAIL=$USER_EMAIL" \
-                                --env-var "USER_PASSWORD=$USER_PASSWORD" \
-                                -r cli,allure --reporter-allure-export allure-results
-                            '''
+docker run --rm ^
+  -v "%WORKSPACE%/allure-results:/etc/newman/allure-results" ^
+  postman-ecomm-standalone:latest run E2E_Ecommerce.postman_collection.json ^
+  --env-var "USER_EMAIL=%USER_EMAIL%" ^
+  --env-var "USER_PASSWORD=%USER_PASSWORD%" ^
+  -r cli,allure --reporter-allure-export /etc/newman/allure-results ^
+  --reporter-allure-simplified-traces
+'''
                         }
                     }
                 }
@@ -68,11 +78,32 @@ pipeline {
     post {
         always {
             script {
-                // This correctly adds the Build Number and other info to the report
-                sh 'echo "Build=$BUILD_NUMBER" > allure-results/environment.properties'
-                
-                // This is the standard Allure command
+                sh 'echo Build=%BUILD_NUMBER% > allure-results/environment.properties'
+
+                writeFile file: 'allure-results/categories.json', text: '''
+                [
+                  { "name": "Assertions", "matchedStatuses": ["failed"], "messageRegex": ".*expect.*" },
+                  { "name": "Network Errors", "matchedStatuses": ["broken"], "messageRegex": ".*ECONN.*" },
+                  { "name": "Known Bugs", "matchedStatuses": ["failed"], "traceRegex": ".*BUG.*" }
+                ]
+                '''
+
+                writeFile file: 'allure-results/executor.json', text: """
+                {
+                  "name": "Jenkins",
+                  "type": "jenkins",
+                  "url": "${env.BUILD_URL}",
+                  "buildOrder": ${env.BUILD_NUMBER},
+                  "buildName": "Build #${env.BUILD_NUMBER}",
+                  "buildUrl": "${env.BUILD_URL}",
+                  "reportUrl": "${env.BUILD_URL}AllureReport",
+                  "executorInfo": "Jenkins job ${env.JOB_NAME}"
+                }
+                """
+
                 allure includeProperties: false, reportBuildPolicy: 'ALWAYS', results: [[path: 'allure-results']]
+
+                echo "📊 Allure report available at: ${env.BUILD_URL}AllureReport"
             }
         }
     }
