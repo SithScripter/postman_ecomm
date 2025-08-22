@@ -2,8 +2,9 @@ FROM node:18-alpine
 
 WORKDIR /etc/newman
 
-# Install Newman + Allure + HTML extra reporters
+# Install Newman + reporters
 RUN npm install -g newman newman-reporter-htmlextra newman-reporter-allure
 
-# Copy the Postman collection into the image
+# Copy test assets into container
 COPY E2E_Ecommerce.postman_collection.json .
+COPY headerimage@2x.jpg .
