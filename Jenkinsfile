@@ -5,7 +5,7 @@ pipeline {
         choice(
             name: 'EXECUTION_MODE',
             choices: ['runner', 'standalone'],
-            description: 'Choose Docker execution mode (main=runner, others=standalone)'
+            description: 'Choose Docker execution mode (defaults: main=runner, others=standalone)'
         )
     }
 
@@ -32,9 +32,9 @@ pipeline {
                     echo "=== Running in ${mode.toUpperCase()} mode (branch: ${env.BRANCH_NAME}) ==="
 
                     if (mode == 'runner') {
-                        sh "docker build -f $WORKSPACE/Dockerfile.runner -t postman-ecomm-runner:latest $WORKSPACE"
+                        sh 'docker build -f Dockerfile.runner -t postman-ecomm-runner:latest .'
                     } else {
-                        sh "docker build -f $WORKSPACE/Dockerfile -t postman-ecomm-standalone:latest $WORKSPACE"
+                        sh 'docker build -f Dockerfile -t postman-ecomm-standalone:latest .'
                     }
                 }
             }
@@ -42,13 +42,14 @@ pipeline {
 
         stage('Prepare Workspace') {
             steps {
-                sh 'rm -rf allure-results && mkdir -p allure-results'
+                sh 'rm -rf allure-results'
+                sh 'mkdir -p allure-results'
             }
         }
 
         stage('Run Tests and Generate Report') {
             steps {
-                checkout scm   // always pull latest repo state
+                checkout scm   // ensure latest files present
 
                 withCredentials([
                     string(credentialsId: 'POSTMAN_ECOM_EMAIL', variable: 'USER_EMAIL'),
@@ -56,26 +57,32 @@ pipeline {
                 ]) {
                     script {
                         def mode = params.EXECUTION_MODE ?: env.DEFAULT_EXECUTION
-                        def image = (mode == 'runner') ? 'postman-ecomm-runner:latest' : 'postman-ecomm-standalone:latest'
 
-                        sh """
+                        if (mode == 'runner') {
+                            sh '''
 docker run --rm \
-  -v $WORKSPACE:/etc/newman \
-  -w /etc/newman \
-  --env USER_EMAIL=$USER_EMAIL \
-  --env USER_PASSWORD=$USER_PASSWORD \
-  --entrypoint sh \
-  $image -c '
-    echo "=== Inside container /etc/newman contents ==="
-    ls -l /etc/newman
-    newman run E2E_Ecommerce.postman_collection.json \
-      --env-var USER_EMAIL=$USER_EMAIL \
-      --env-var USER_PASSWORD=$USER_PASSWORD \
-      -r cli,allure \
-      --reporter-allure-export allure-results \
-      --reporter-allure-simplified-traces
-  '
-"""
+  --env USER_EMAIL --env USER_PASSWORD \
+  postman-ecomm-runner:latest \
+  newman run E2E_Ecommerce.postman_collection.json \
+    --env-var USER_EMAIL=$USER_EMAIL \
+    --env-var USER_PASSWORD=$USER_PASSWORD \
+    -r cli,allure \
+    --reporter-allure-export allure-results \
+    --reporter-allure-simplified-traces
+'''
+                        } else {
+                            sh '''
+docker run --rm \
+  --env USER_EMAIL --env USER_PASSWORD \
+  postman-ecomm-standalone:latest \
+  newman run E2E_Ecommerce.postman_collection.json \
+    --env-var USER_EMAIL=$USER_EMAIL \
+    --env-var USER_PASSWORD=$USER_PASSWORD \
+    -r cli,allure \
+    --reporter-allure-export allure-results \
+    --reporter-allure-simplified-traces
+'''
+                        }
                     }
                 }
             }
@@ -85,10 +92,8 @@ docker run --rm \
     post {
         always {
             script {
-                // Allure environment
                 sh 'echo Build=$BUILD_NUMBER > allure-results/environment.properties'
 
-                // Categories file
                 writeFile file: 'allure-results/categories.json', text: '''
                 [
                   { "name": "Assertions", "matchedStatuses": ["failed"], "messageRegex": ".*expect.*" },
@@ -97,7 +102,6 @@ docker run --rm \
                 ]
                 '''
 
-                // Executor info
                 writeFile file: 'allure-results/executor.json', text: """
                 {
                   "name": "Jenkins",
