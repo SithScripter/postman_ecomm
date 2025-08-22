@@ -61,7 +61,7 @@ pipeline {
                         if (mode == 'runner') {
                             sh '''
 docker run --rm \
-  -v "$(pwd):/etc/newman" \
+  -v "$WORKSPACE:/etc/newman" \
   -w /etc/newman \
   --env USER_EMAIL --env USER_PASSWORD \
   --entrypoint sh \
@@ -79,7 +79,7 @@ docker run --rm \
                         } else {
                             sh '''
 docker run --rm \
-  -v "$(pwd):/etc/newman" \
+  -v "$WORKSPACE:/etc/newman" \
   -w /etc/newman \
   --env USER_EMAIL --env USER_PASSWORD \
   --entrypoint sh \
